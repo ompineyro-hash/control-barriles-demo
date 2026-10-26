@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Mapa de Control de Barriles</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: la cadena de la cerveza de izquierda a derecha (insumos → cobro), y debajo las áreas que atraviesan todo */
+:root{
+  --bg:#f6f4ef; --panel:#ffffff; --fg:#231c14; --muted:#6d6457; --line:#e2dccf;
+  --malta:#b5651d; --hecho:#2f7d4f; --hecho-bg:#e3f1e8; --prox:#b07a00; --prox-bg:#fbf0d4;
+  --fut:#5b6475; --fut-bg:#e8ebf0; --integ:#7a4bb0; --integ-bg:#efe7f8;
+  --display:"Archivo",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#17130f; --panel:#211b15; --fg:#f1ebe1; --muted:#a89d8d; --line:#3a3128;
+  --malta:#e0913f; --hecho:#6fcf97; --hecho-bg:#1d3326; --prox:#f0c24b; --prox-bg:#3a2f12;
+  --fut:#aab3c4; --fut-bg:#2a2f38; --integ:#c4a1ef; --integ-bg:#33274a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17130f; --panel:#211b15; --fg:#f1ebe1; --muted:#a89d8d; --line:#3a3128;
+  --malta:#e0913f; --hecho:#6fcf97; --hecho-bg:#1d3326; --prox:#f0c24b; --prox-bg:#3a2f12;
+  --fut:#aab3c4; --fut-bg:#2a2f38; --integ:#c4a1ef; --integ-bg:#33274a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--display);line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-size:clamp(26px,4vw,38px);font-weight:800;margin:0 0 6px;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:18px;font-weight:800;margin:0;text-wrap:balance}
+.lead{color:var(--muted);max-width:68ch;margin:0}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--malta)}
+header{display:grid;gap:10px;margin-bottom:22px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 10px}
+.bar button{font:500 12px var(--mono);border:1px solid var(--line);background:var(--panel);color:var(--fg);padding:6px 10px;border-radius:999px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.bar button[aria-pressed="true"]{border-color:var(--fg)}
+.bar button:focus-visible,.mod:focus-visible{outline:2px solid var(--malta);outline-offset:2px}
+.dot{width:9px;height:9px;border-radius:50%}
+.count{font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:auto}
+.chain{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;position:relative}
+.trans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.area{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px;align-content:start;min-width:0}
+.area .step{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.chain .area{border-top:4px solid var(--malta)}
+.trans .area{border-top:4px solid var(--muted)}
+.mods{display:grid;gap:6px}
+.mod{all:unset;cursor:pointer;display:grid;grid-template-columns:10px 1fr;gap:8px;align-items:start;padding:7px 8px;border-radius:6px;font-size:13px;line-height:1.3}
+.mod .dot{margin-top:4px}
+.mod.hecho{background:var(--hecho-bg)} .mod.hecho .dot{background:var(--hecho)}
+.mod.prox{background:var(--prox-bg)} .mod.prox .dot{background:var(--prox)}
+.mod.fut{background:var(--fut-bg)} .mod.fut .dot{background:var(--fut)}
+.mod.integ{background:var(--integ-bg)} .mod.integ .dot{background:var(--integ)}
+.mod[hidden]{display:none}
+.row{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:start}.row:has(.mod[hidden]){display:none}.pick{width:18px;height:18px;margin-top:7px;accent-color:var(--malta);cursor:pointer}
+.mod .det{grid-column:2;color:var(--muted);font-size:12px}
+.mod:not(.open) .det{display:none}
+.arrow{font-family:var(--mono);color:var(--malta);font-size:12px;text-align:center;margin:8px 0 2px}
+.under{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;margin-top:14px;letter-spacing:.06em;text-transform:uppercase}
+section.plan{margin-top:34px;display:grid;gap:12px}
+.stages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.stage{border-left:3px solid var(--line);padding:4px 0 4px 12px;min-width:0}
+.stage.now{border-left-color:var(--malta)}
+.stage b{display:block;font-size:14px;margin-bottom:4px}
+.stage p{margin:0;font-size:13px;color:var(--muted)}
+.note{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:14px;max-width:80ch}
+.note p{margin:0 0 8px}.note p:last-child{margin:0}
+.src{font-size:12px;color:var(--muted);margin-top:28px}
+.src a{color:var(--muted)}
+.src ul{padding-left:18px;margin:6px 0 0}
+@media (max-width:980px){.chain{grid-template-columns:repeat(2,minmax(0,1fr))}.trans{grid-template-columns:1fr}.stages{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.chain,.stages{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">Control de Barriles · para quienes la prueban</span>
+  <h1>Hacia dónde va la app, y qué te serviría primero</h1>
+  <p class="lead">Arriba, el camino de la cerveza: del insumo al cobro. Abajo, lo que atraviesa todo. Cada parte se puede prender o apagar: si solo hacés latas, no ves barriles. Tocá un módulo para ver el detalle y marcá los que más te servirían.</p>
+</header>
+
+<div class="bar" role="group" aria-label="Filtrar por estado">
+  <button data-f="all" aria-pressed="true">Todo</button>
+  <button data-f="hecho" aria-pressed="false"><span class="dot" style="background:var(--hecho)"></span>Hecho</button>
+  <button data-f="prox" aria-pressed="false"><span class="dot" style="background:var(--prox)"></span>Próximo</button>
+  <button data-f="fut" aria-pressed="false"><span class="dot" style="background:var(--fut)"></span>Más adelante</button>
+  <button data-f="integ" aria-pressed="false"><span class="dot" style="background:var(--integ)"></span>Conectar, no construir</button>
+  <span class="count" id="count"></span>
+</div>
+
+<div class="chain" id="chain"></div>
+<p class="under">Lo que atraviesa toda la cadena</p>
+<div class="trans" id="trans"></div>
+
+<section class="plan">
+  <span class="eyebrow">Orden sugerido</span>
+  <h2>Cuatro etapas, una a la vez</h2>
+  <div class="stages">
+    <div class="stage now"><b>1 · Afirmar lo que hay</b><p>Testers con barriles y latas. Corregir lo que encuentren. Estadísticas simples, exportar a Excel, aviso de backup.</p></div>
+    <div class="stage"><b>2 · Pasar a la nube</b><p>Entrar con usuario, cada cervecería con sus datos aparte, celular y compu a la vez, permisos por persona.</p></div>
+    <div class="stage"><b>3 · Costos e insumos</b><p>Malta, lúpulo, levadura, latas vacías, CO₂. Con eso sale el costo real por tanda y el margen por cliente.</p></div>
+    <div class="stage"><b>4 · Producción fina</b><p>Recetas, paso a paso, mediciones de calidad, toneles y trasiegos, pedidos y repartos.</p></div>
+  </div>
+</section>
+<section class="plan" id="enc">
+  <span class="eyebrow">Tu opinión</span>
+  <h2>¿Qué te serviría primero?</h2>
+  <p class="lead">Marcá hasta 3 módulos con la casilla de la derecha, escribí lo que falte y copiá la respuesta para mandarla por WhatsApp.</p>
+  <div class="note">
+    <p id="elegidos">Todavía no marcaste ninguno.</p>
+    <label for="falta" style="display:block;font-weight:600;margin:8px 0 4px">¿Falta algo que uses en tu cervecería?</label>
+    <textarea id="falta" rows="3" style="width:100%;font:14px var(--display);background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px"></textarea>
+    <p style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button id="copiar" type="button" style="font:600 14px var(--display);background:var(--malta);color:#fff;border:0;border-radius:6px;padding:9px 14px;cursor:pointer">Copiar respuesta</button><span id="ok" style="color:var(--muted);font-size:13px"></span></p>
+    <pre id="txt" hidden style="white-space:pre-wrap;font:12px var(--mono);background:var(--bg);padding:8px;border-radius:6px"></pre>
+  </div>
+</section>
+
+</div>
+
+<script>
+const H='hecho',P='prox',F='fut',I='integ';
+const chain=[
+ {t:'Insumos y compras',s:'1 · entra',m:[
+  [F,'Stock de materias primas','Malta, lúpulo, levadura, agua tratada, CO₂. Se descuenta solo al armar una tanda.'],
+  [F,'Envases vacíos','Latas, tapas y etiquetas sin llenar, con aviso cuando queda poco.'],
+  [F,'Proveedores y compras','Quién vende qué, a qué precio, y cuánto se le debe.']]},
+ {t:'Producción',s:'2 · se hace',m:[
+  [H,'Fermentadores y tandas','Capacidad, rinde, código T-00X, litros reales con ajuste al cierre.'],
+  [H,'Cuántos envases necesito','Planificación de latas y barriles según los litros de la tanda.'],
+  [P,'Toneles y trasiegos','Tanques grandes (3000 L) y pasar cerveza de un tanque a otro.'],
+  [F,'Recetas y paso a paso','Versiones de receta, costo por receta, guía del día de cocción.'],
+  [F,'Mediciones de calidad','Densidad, pH, temperatura por día. Gráfico de fermentación.']]},
+ {t:'Envasado y stock',s:'3 · se guarda',m:[
+  [H,'Barriles retornables','Limpio, lleno, en cliente, a lavar, fuera de servicio. Historial y ciclos.'],
+  [H,'Latas por lote','Envasado con número de lote, stock disponible y salidas.'],
+  [H,'Otros envases por cantidad','Cualquier tipo nuevo se configura: unidad, medidas, tara, tope.'],
+  [P,'Ubicaciones configurables','Cámara de frío, depósito, otra sucursal.']]},
+ {t:'Clientes y ventas',s:'4 · sale',m:[
+  [H,'Clientes','Datos, plazo de pago, qué tiene cada uno, botón de WhatsApp.'],
+  [H,'Precios por estilo','Precio general y por cerveza.'],
+  [P,'Barriles: alquiler o depósito','Cobrar el uso o una garantía por el barril prestado.'],
+  [P,'Consignación de latas','Deja mercadería, cobra lo vendido, devuelve lo que no.'],
+  [F,'Pedidos y repartos','Pedido del cliente, armado, ruta de entrega.'],
+  [I,'Caja del bar propio','Si la cervecería tiene barra, conectar con su sistema de caja.']]},
+ {t:'Dinero',s:'5 · se cobra',m:[
+  [H,'Pagos y cuenta corriente','Saldo, días de deuda, vencimientos, anular pagos.'],
+  [H,'Pérdidas como gasto','Cerveza arruinada o tirada queda anotada con su costo.'],
+  [P,'Costo por tanda','Hoy hay un costo por litro general. Falta el real, desde los insumos.'],
+  [I,'Factura electrónica','La emite un sistema habilitado por ARCA. Nosotros solo pasamos los datos.'],
+  [I,'Contabilidad e impuestos','Exportar al contador. Impuestos internos: confirmar con contador.']]}
+];
+const trans=[
+ {t:'Calidad y trazabilidad',m:[
+  [H,'Trazabilidad completa','De la tanda al envase y al cliente, ida y vuelta.'],
+  [H,'Problemas y reclamos','Origen: producción, envase o cliente. Quién lo detectó.'],
+  [H,'Retener un lote','Frena una tanda sospechosa y avisa adónde fue.'],
+  [F,'Vencimientos de habilitaciones','Recordatorio de RNE, RNPA, análisis y libretas.']]},
+ {t:'Números y análisis',m:[
+  [H,'Resumen general','Stock por cerveza, listos para salir, alertas.'],
+  [P,'Estadísticas','Lo más vendido, mejores clientes, rinde por tanda.'],
+  [P,'Exportar a Excel','Para el contador o para mirar fuera de la app.'],
+  [F,'Margen por cliente y por estilo','Necesita primero costos e insumos.']]},
+ {t:'Plataforma',m:[
+  [H,'Módulos que se prenden y apagan','Si hoy solo hacés latas, mañana podés sumar barriles.'],
+  [H,'Modo local con copias','Funciona en un archivo, sin cuenta. Backup y restaurar.'],
+  [P,'Aviso de backup','Que la app recuerde guardar una copia.'],
+  [F,'Nube con usuario','Varias cervecerías separadas, celular y compu a la vez.'],
+  [F,'Usuarios y permisos','Dueño ve todo; operario carga sin borrar.'],
+  [F,'Términos y privacidad','Reglas claras sobre tus datos.']]}
+];
+function areaHTML(a){return `<div class="area"><div>${a.s?`<div class="step">${a.s}</div>`:''}<h2>${a.t}</h2></div><div class="mods">${a.m.map(([st,n,d])=>`<div class="row"><button class="mod ${st}" data-st="${st}" aria-expanded="false"><span class="dot"></span><span>${n}</span><span class="det">${d}</span></button><input type="checkbox" class="pick" aria-label="Me serviría: ${n}" data-n="${n}"></div>`).join('')}</div></div>`}
+document.getElementById('chain').innerHTML=chain.map(areaHTML).join('');
+document.getElementById('trans').innerHTML=trans.map(areaHTML).join('');
+const mods=[...document.querySelectorAll('.mod')];
+function count(f){const all=mods.length,h=mods.filter(m=>m.dataset.st==='hecho').length;
+ document.getElementById('count').textContent=f==='all'?`${h} de ${all} módulos hechos`:`${mods.filter(m=>!m.hidden).length} módulos`}
+mods.forEach(m=>m.addEventListener('click',()=>{const o=m.classList.toggle('open');m.setAttribute('aria-expanded',o)}));
+document.querySelectorAll('.bar button').forEach(b=>b.addEventListener('click',()=>{
+ const f=b.dataset.f;document.querySelectorAll('.bar button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+ mods.forEach(m=>m.hidden=!(f==='all'||m.dataset.st===f));count(f)}));
+count('all');
+const picks=[...document.querySelectorAll('.pick')];
+function sel(){return picks.filter(p=>p.checked).map(p=>p.dataset.n)}
+picks.forEach(p=>p.addEventListener('change',()=>{const s=sel();if(s.length>3){p.checked=false;document.getElementById('ok').textContent='Máximo 3.';return}
+ document.getElementById('ok').textContent='';document.getElementById('elegidos').textContent=s.length?'Elegiste: '+s.join(', ')+'.':'Todavía no marcaste ninguno.'}));
+document.getElementById('copiar').addEventListener('click',()=>{
+ const s=sel(),f=document.getElementById('falta').value.trim();
+ const t='Control de Barriles - mi opinión\nMe serviría primero: '+(s.length?s.join(', '):'(no marqué)')+'\nFalta: '+(f||'nada');
+ const pre=document.getElementById('txt');pre.textContent=t;
+ const done=m=>{document.getElementById('ok').textContent=m};
+ try{navigator.clipboard.writeText(t).then(()=>done('Copiado. Pegalo en WhatsApp.'),()=>{pre.hidden=false;done('Copiá el texto de abajo.')})}catch(e){pre.hidden=false;done('Copiá el texto de abajo.')}
+});
+</script>
+
+</body>
+</html>
