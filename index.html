@@ -339,9 +339,9 @@ window.__cbSeed = function() {
     });
   };
   data.tandas.t2.recetaId = "r2";
-  data.tandas.t2.coccion = { recetaId: "r2", recetaNombre: "IPA", base: 500, items: it(c2), levadura: { tipo: "nueva" }, provisorio: true, actualizada: T(12), correcciones: 0, por: by };
+  data.tandas.t2.coccion = { recetaId: "r2", recetaNombre: "IPA", base: 500, items: it(c2), levadura: { tipo: "nueva" }, ogReal: 1.062, ogObj: 1.062, provisorio: true, actualizada: T(12), correcciones: 0, por: by };
   data.tandas.t3.recetaId = "r3";
-  data.tandas.t3.coccion = { recetaId: "r3", recetaNombre: "Stout", base: 1e3, items: it(c3), levadura: { tipo: "reutilizada", deTandaId: "t2", gen: 2 }, provisorio: true, actualizada: T(3), correcciones: 1, por: by };
+  data.tandas.t3.coccion = { recetaId: "r3", recetaNombre: "Stout", base: 1e3, items: it(c3), levadura: { tipo: "reutilizada", deTandaId: "t2", gen: 2 }, ogReal: 1.055, ogObj: 1.058, provisorio: true, actualizada: T(3), correcciones: 1, por: by };
   data.recetas = {
     r1: {
       nombre: "Golden",
@@ -1818,7 +1818,7 @@ window.__cbSeed = function() {
     const c = t.coccion;
     if (!c) return "";
     const k = coccionCosto(t, R), T = by(S.tandas);
-    return `<div class="small"><span class="chip plain" style="--c:var(--soon)">Cocción provisoria</span> ${c.recetaNombre ? esc(c.recetaNombre) + " · " : ""}${k.tot ? `insumos ${fmt$(k.tot)}${k.porL ? " · " + fmtP(k.porL) + "/L" : ""}` : ""}${c.levadura && c.levadura.tipo === "reutilizada" ? `<div class="muted">Levadura reutilizada de ${esc(((_a = T[c.levadura.deTandaId]) == null ? void 0 : _a.codigo) || "otra tanda")} · generación ${fmtN(c.levadura.gen || 2)}</div>` : ""}</div>`;
+    return `<div class="small"><span class="chip plain" style="--c:var(--soon)">Cocción provisoria</span> ${c.recetaNombre ? esc(c.recetaNombre) + " · " : ""}${k.tot ? `insumos ${fmt$(k.tot)}${k.porL ? " · " + fmtP(k.porL) + "/L" : ""}` : ""}${c.levadura && c.levadura.tipo === "reutilizada" ? `<div class="muted">Levadura reutilizada de ${esc(((_a = T[c.levadura.deTandaId]) == null ? void 0 : _a.codigo) || "otra tanda")} · generación ${fmtN(c.levadura.gen || 2)}${c.levadura.refuerzo ? " · con refuerzo de levadura nueva" : ""}</div>` : ""}${c.ogReal ? `<div class="muted">Densidad inicial ${denTxt(c.ogReal)}${c.ogObj ? ` · objetivo ${denTxt(c.ogObj)}${Math.abs(c.ogReal - c.ogObj) >= 15e-4 ? ` <span style="color:var(--warn)">(${c.ogReal < c.ogObj ? "abajo" : "arriba"})</span>` : ""}` : ""}</div>` : ""}</div>`;
   }
   function sheetCoccion(id, intento) {
     var _a, _b, _c;
@@ -1837,23 +1837,26 @@ window.__cbSeed = function() {
     <div class="note"><strong>Todo esto es provisorio.</strong> Si en la cocción pasó algo distinto, o te das cuenta después, volvé y corregilo: el stock de insumos se acomoda solo y queda la marca de que se corrigió.</div>
     <div class="grid2"><label class="f" for="cc-r">Receta<select id="cc-r"><option value="">Sin receta</option>${opts(recs, rec0 == null ? void 0 : rec0.id, (r) => r.nombre + " · para " + fmtN(r.litros) + " L")}</select></label>
     <label class="f" for="cc-b">Litros de mosto que salieron de la cocción<input id="cc-b" type="number" min="0" step="any" inputmode="decimal" value="${esc((_b = (_a = c.base) != null ? _a : t.mosto) != null ? _b : "")}"><span class="h">Lo que entró al fermentador.</span></label></div>
+    <label class="f" for="cc-og">Densidad inicial real ${enPlato() ? "(°P)" : "(ej. 1.050)"}<input id="cc-og" inputmode="decimal" value="${denIn(c.ogReal)}" style="max-width:200px"><span class="h" id="cc-ogh"></span></label>
     <div><button type="button" class="btn sm" id="cc-calc">Calcular insumos desde la receta</button> <span class="h" id="cc-k"></span></div>
     <div><h3 class="lbl">Insumos que usaste</h3><div id="cc-items" class="stack" style="gap:8px"></div><button type="button" class="btn sm" id="cc-add" style="margin-top:8px">+ Insumo</button></div>
     <div><h3 class="lbl">Levadura</h3><div class="seg">
       <label><input type="radio" name="cc-lv" value="nueva" ${lv.tipo !== "reutilizada" ? "checked" : ""}><span><strong>Nueva</strong><br><span class="small muted">Sale del stock de insumos.</span></span></label>
       <label><input type="radio" name="cc-lv" value="reutilizada" ${lv.tipo === "reutilizada" ? "checked" : ""}><span><strong>Reutilizada</strong><br><span class="small muted">Cosechada de otra tanda: no se descuenta del stock.</span></span></label></div>
       <div class="grid2" id="cc-rw" style="margin-top:8px" ${lv.tipo === "reutilizada" ? "" : "hidden"}><label class="f" for="cc-dt">De qué tanda<select id="cc-dt">${prev.length ? opts(prev, lv.deTandaId, (x) => x.codigo + " · " + (x.estilo || "") + " · " + fmtF(x.fecha)) : '<option value="">No hay tandas anteriores</option>'}</select></label>
-      <label class="f" for="cc-g">Generación<input id="cc-g" type="number" min="2" step="1" value="${esc((_c = lv.gen) != null ? _c : "")}" style="max-width:120px"><span class="h">Se calcula sola: la de la tanda de origen + 1.</span></label></div></div>
+      <label class="f" for="cc-g">Generación<input id="cc-g" type="number" min="2" step="1" value="${esc((_c = lv.gen) != null ? _c : "")}" style="max-width:120px"><span class="h">Se calcula sola: la de la tanda de origen + 1.</span></label>
+      <label class="row" style="gap:8px;grid-column:1/-1;font-weight:400;cursor:pointer"><input type="checkbox" id="cc-ln" class="ck" ${lv.refuerzo ? "checked" : ""}> <span>No arrancó bien y agregué levadura nueva <span class="muted small">(esa sí se descuenta del stock)</span></span></label></div></div>
     <div class="note row between"><span>Costo de insumos</span><strong class="num" id="cc-tot">$ 0</strong></div>
     <button class="btn pri" type="submit">Guardar cocción</button></form>`, () => {
       const box = $("#cc-items");
       let n = 0;
       const reut = () => (document.querySelector("input[name=cc-lv]:checked") || {}).value === "reutilizada";
+      const noDesc = () => reut() && !$("#cc-ln").checked;
       const tot = () => {
         let s = 0;
         box.querySelectorAll(".cc-row").forEach((d) => {
           var _a2;
-          const id2 = d.querySelector(".cc-i").value, q = +d.querySelector(".cc-q").value || 0, x = R[id2], sk = reut() && esLev(id2);
+          const id2 = d.querySelector(".cc-i").value, q = +d.querySelector(".cc-q").value || 0, x = R[id2], sk = noDesc() && esLev(id2);
           d.querySelector(".cc-u").textContent = uTxt((_a2 = S.insumos.find((z) => z.id === id2)) == null ? void 0 : _a2.unidad);
           const prevQ = (c.items || []).filter((it) => it.insumoId === id2).reduce((a, it) => a + Number(it.cantidad || 0), 0), disp = (x ? x.stock : 0) + prevQ;
           d.querySelector(".cc-s").innerHTML = sk ? '<span class="muted">Reutilizada: no se descuenta</span>' : q > disp + 1e-9 ? `<span style="color:var(--warn)">Hay ${fmtN(disp)}: quedaría en negativo</span>` : `<span class="muted">Hay ${fmtN(disp)}</span>`;
@@ -1921,10 +1924,29 @@ window.__cbSeed = function() {
         if (reut() && !val("cc-g")) gen();
         tot();
       }));
+      $("#cc-ln").addEventListener("change", tot);
+      const ogh = () => {
+        const rr = S.recetas.find((z) => z.id === val("cc-r"));
+        const o = denOut(val("cc-og"));
+        const h = $("#cc-ogh");
+        if (!rr || !rr.og) {
+          h.textContent = rr ? "La receta no tiene densidad objetivo." : "";
+          return;
+        }
+        if (!o) {
+          h.textContent = "Objetivo de la receta: " + denTxt(rr.og);
+          return;
+        }
+        const d = o - rr.og;
+        h.innerHTML = `Objetivo ${denTxt(rr.og)} · ${Math.abs(d) < 15e-4 ? '<span style="color:var(--ok)">en objetivo</span>' : `<span style="color:var(--warn)">${d < 0 ? "abajo" : "arriba"} del objetivo</span>`}`;
+      };
+      $("#cc-og").addEventListener("input", ogh);
+      $("#cc-r").addEventListener("change", ogh);
+      ogh();
       tot();
       submitOnce($("#f"), () => {
-        const rs = reut();
-        const items = [...box.querySelectorAll(".cc-row")].map((d) => ({ insumoId: d.querySelector(".cc-i").value, cantidad: Math.round((+d.querySelector(".cc-q").value || 0) * 1e3) / 1e3 })).filter((x) => x.cantidad > 0 && !(rs && esLev(x.insumoId)));
+        const rs = reut(), nd = noDesc();
+        const items = [...box.querySelectorAll(".cc-row")].map((d) => ({ insumoId: d.querySelector(".cc-i").value, cantidad: Math.round((+d.querySelector(".cc-q").value || 0) * 1e3) / 1e3 })).filter((x) => x.cantidad > 0 && !(nd && esLev(x.insumoId)));
         if (rs && !val("cc-dt")) {
           toast("Elegí de qué tanda viene la levadura.");
           return false;
@@ -1937,7 +1959,7 @@ window.__cbSeed = function() {
           x.costo = a && a.avg ? Math.round(x.cantidad * a.avg * 100) / 100 : null;
         });
         const costo = items.reduce((s, x) => s + (x.costo || 0), 0);
-        const coccion = { recetaId: (r == null ? void 0 : r.id) || null, recetaNombre: (r == null ? void 0 : r.nombre) || null, base: b, items, costo: Math.round(costo * 100) / 100, levadura: rs ? { tipo: "reutilizada", deTandaId: val("cc-dt"), gen: +val("cc-g") || 2 } : { tipo: "nueva" }, provisorio: true, actualizada: now, correcciones: (c.correcciones || 0) + (t.coccion ? 1 : 0), por: S.uid };
+        const coccion = { recetaId: (r == null ? void 0 : r.id) || null, recetaNombre: (r == null ? void 0 : r.nombre) || null, base: b, items, costo: Math.round(costo * 100) / 100, levadura: rs ? { tipo: "reutilizada", deTandaId: val("cc-dt"), gen: +val("cc-g") || 2, refuerzo: !nd } : { tipo: "nueva" }, ogReal: denOut(val("cc-og")), ogObj: (r == null ? void 0 : r.og) || null, provisorio: true, actualizada: now, correcciones: (c.correcciones || 0) + (t.coccion ? 1 : 0), por: S.uid };
         return W(async () => {
           for (const m of S.movins.filter((m2) => m2.tandaId === id && m2.tipo === "consumo" && !m2.anulado)) await db.doc("movins/" + m.id).update({ anulado: true, anuladoEn: now, anuladoMotivo: "Cocción corregida" });
           for (const x of items) await db.collection("movins").add({ insumoId: x.insumoId, tipo: "consumo", cantidad: -x.cantidad, motivo: `Cocción ${t.codigo}${t.estilo ? " · " + t.estilo : ""}`, tandaId: id, fecha: t.fecha || hoy(), t: now, por: S.uid });
