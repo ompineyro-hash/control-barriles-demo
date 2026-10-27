@@ -299,7 +299,7 @@ window.__cbSeed = function() {
     i1: { nombre: "Malta Pilsen", categoria: "Malta", unidad: "kg", minimo: 100 },
     i2: { nombre: "Malta Caramelo 60", categoria: "Malta", unidad: "kg", minimo: 15 },
     i3: { nombre: "Malta Chocolate", categoria: "Malta", unidad: "kg", minimo: 5 },
-    i4: { nombre: "Lúpulo Cascade", categoria: "Lúpulo", unidad: "g", minimo: 1e3 },
+    i4: { nombre: "Lúpulo Cascade", categoria: "Lúpulo", unidad: "g", minimo: 1500 },
     i5: { nombre: "Lúpulo Mosaic", categoria: "Lúpulo", unidad: "g", minimo: 1e3 },
     i6: { nombre: "Levadura US-05", categoria: "Levadura", unidad: "u", minimo: 4 },
     i7: { nombre: "Lata vacía 473 ml", categoria: "Envase vacío", unidad: "u", minimo: 500 },
@@ -313,23 +313,40 @@ window.__cbSeed = function() {
     p3: { nombre: "Envases Ejemplo", contacto: "Depósito", vende: "Latas, tapas, CO2, limpieza", notas: "Mínimo 1000 latas por pedido." }
   };
   data.compras = {
-    k1: { fecha: D(40), proveedorId: "p1", factura: "A-0001-00004521", items: [{ insumoId: "i1", cantidad: 250, precio: 1800, lote: "MP-2409" }, { insumoId: "i2", cantidad: 25, precio: 2600, lote: null }, { insumoId: "i3", cantidad: 10, precio: 3100, lote: null }], total: 546e3, notas: "", t: T(40), por: by },
+    k1: { fecha: D(40), proveedorId: "p1", factura: "A-0001-00004521", items: [{ insumoId: "i1", cantidad: 250, precio: 1800, lote: "MP-2409" }, { insumoId: "i2", cantidad: 40, precio: 2600, lote: null }, { insumoId: "i3", cantidad: 20, precio: 3100, lote: null }], total: 616e3, notas: "", t: T(40), por: by },
     k2: { fecha: D(40), proveedorId: "p2", factura: null, items: [{ insumoId: "i4", cantidad: 5e3, precio: 55, lote: "CAS-24" }, { insumoId: "i5", cantidad: 2e3, precio: 95, lote: "MOS-24" }, { insumoId: "i6", cantidad: 12, precio: 9e3, lote: null }], total: 573e3, notas: "", t: T(40), por: by },
     k3: { fecha: D(35), proveedorId: "p3", factura: "B-0003-00001877", items: [{ insumoId: "i7", cantidad: 1e3, precio: 260, lote: null }, { insumoId: "i8", cantidad: 1e3, precio: 45, lote: null }, { insumoId: "i9", cantidad: 5, precio: 3500, lote: null }, { insumoId: "i10", cantidad: 20, precio: 4200, lote: null }], total: 406500, notas: "", t: T(35), por: by },
-    k4: { fecha: D(8), proveedorId: "p1", factura: "A-0001-00004790", items: [{ insumoId: "i1", cantidad: 200, precio: 1950, lote: "MP-2410" }], total: 39e4, notas: "Subió el precio", t: T(8), por: by }
+    k4: { fecha: D(8), proveedorId: "p1", factura: "A-0001-00004790", items: [{ insumoId: "i1", cantidad: 300, precio: 1950, lote: "MP-2410" }], total: 585e3, notas: "Subió el precio", t: T(8), por: by }
+  };
+  var CM = function(tid, cod, est, f, arr) {
+    arr.forEach(function(x, n) {
+      data.movins["c" + tid + n] = { insumoId: x[0], tipo: "consumo", cantidad: -x[1], motivo: "Cocción " + cod + " · " + est, tandaId: tid, fecha: f, t: T(1), por: by };
+    });
   };
   data.movins = {
-    m1: { insumoId: "i1", tipo: "ajuste", cantidad: -180, motivo: "Uso fuera de receta", detalle: "Cocciones de T-001, T-002 y T-003 (todavía sin recetas cargadas)", fecha: D(9), t: T(9), por: by },
-    m2: { insumoId: "i4", tipo: "ajuste", cantidad: -4300, motivo: "Uso fuera de receta", detalle: "Cocciones del mes", fecha: D(9), t: T(9), por: by },
-    m3: { insumoId: "i6", tipo: "ajuste", cantidad: -9, motivo: "Uso fuera de receta", detalle: "Cocciones del mes", fecha: D(9), t: T(9), por: by },
+    m1: { insumoId: "i1", tipo: "ajuste", cantidad: -80, motivo: "Uso fuera de receta", detalle: "Cocción T-001 (antes de cargar recetas)", fecha: D(26), t: T(26), por: by },
+    m2: { insumoId: "i4", tipo: "ajuste", cantidad: -1e3, motivo: "Uso fuera de receta", detalle: "Cocción T-001 (antes de cargar recetas)", fecha: D(26), t: T(26), por: by },
+    m3: { insumoId: "i6", tipo: "ajuste", cantidad: -4, motivo: "Uso fuera de receta", detalle: "Cocción T-001 (antes de cargar recetas)", fecha: D(26), t: T(26), por: by },
     m4: { insumoId: "i7", tipo: "ajuste", cantidad: -200, motivo: "Uso fuera de receta", detalle: "Envasado de latas T-001", fecha: D(23), t: T(23), por: by },
     m5: { insumoId: "i8", tipo: "ajuste", cantidad: -200, motivo: "Uso fuera de receta", detalle: "Envasado de latas T-001", fecha: D(23), t: T(23), por: by }
   };
+  var c2 = [["i1", 112.5], ["i2", 7.5], ["i4", 1250], ["i5", 1875], ["i6", 5]], c3 = [["i1", 200], ["i2", 18.75], ["i3", 15], ["i4", 1500]];
+  CM("t2", "T-002", "IPA", D(12), c2);
+  CM("t3", "T-003", "Stout", D(3), c3);
+  var it = function(a) {
+    return a.map(function(x) {
+      return { insumoId: x[0], cantidad: x[1] };
+    });
+  };
+  data.tandas.t2.recetaId = "r2";
+  data.tandas.t2.coccion = { recetaId: "r2", recetaNombre: "IPA", base: 500, items: it(c2), levadura: { tipo: "nueva" }, provisorio: true, actualizada: T(12), correcciones: 0, por: by };
+  data.tandas.t3.recetaId = "r3";
+  data.tandas.t3.coccion = { recetaId: "r3", recetaNombre: "Stout", base: 1e3, items: it(c3), levadura: { tipo: "reutilizada", deTandaId: "t2", gen: 2 }, provisorio: true, actualizada: T(3), correcciones: 1, por: by };
   data.recetas = {
     r1: {
       nombre: "Golden",
       estilo: "Golden",
-      litros: 400,
+      litros: 500,
       og: 1.048,
       fg: 1.01,
       ibu: 20,
@@ -340,12 +357,12 @@ window.__cbSeed = function() {
       fermDias: 10,
       macerado: [{ temp: 66, min: 60 }, { temp: 76, min: 10 }],
       notas: "Clarificar en frío 3 días antes de envasar.",
-      ingredientes: [{ insumoId: "i1", cantidad: 80, uso: "Macerado" }, { insumoId: "i4", cantidad: 600, uso: "Hervor", minuto: 60 }, { insumoId: "i4", cantidad: 400, uso: "Hervor", minuto: 10 }, { insumoId: "i6", cantidad: 4, uso: "Fermentador" }]
+      ingredientes: [{ insumoId: "i1", cantidad: 100, uso: "Macerado" }, { insumoId: "i4", cantidad: 750, uso: "Hervor", minuto: 60 }, { insumoId: "i4", cantidad: 500, uso: "Hervor", minuto: 10 }, { insumoId: "i6", cantidad: 5, uso: "Fermentador" }]
     },
     r2: {
       nombre: "IPA",
       estilo: "IPA",
-      litros: 400,
+      litros: 500,
       og: 1.062,
       fg: 1.012,
       ibu: 60,
@@ -356,12 +373,12 @@ window.__cbSeed = function() {
       fermDias: 12,
       macerado: [{ temp: 65, min: 60 }, { temp: 76, min: 10 }],
       notas: "",
-      ingredientes: [{ insumoId: "i1", cantidad: 90, uso: "Macerado" }, { insumoId: "i2", cantidad: 6, uso: "Macerado" }, { insumoId: "i4", cantidad: 1e3, uso: "Hervor", minuto: 60 }, { insumoId: "i5", cantidad: 1500, uso: "Dry hop", dias: 4 }, { insumoId: "i6", cantidad: 4, uso: "Fermentador" }]
+      ingredientes: [{ insumoId: "i1", cantidad: 112.5, uso: "Macerado" }, { insumoId: "i2", cantidad: 7.5, uso: "Macerado" }, { insumoId: "i4", cantidad: 1250, uso: "Hervor", minuto: 60 }, { insumoId: "i5", cantidad: 1875, uso: "Dry hop", dias: 4 }, { insumoId: "i6", cantidad: 5, uso: "Fermentador" }]
     },
     r3: {
       nombre: "Stout",
       estilo: "Stout",
-      litros: 800,
+      litros: 1e3,
       og: 1.058,
       fg: 1.014,
       ibu: 35,
@@ -372,7 +389,7 @@ window.__cbSeed = function() {
       fermDias: 12,
       macerado: [{ temp: 67, min: 60 }],
       notas: "",
-      ingredientes: [{ insumoId: "i1", cantidad: 160, uso: "Macerado" }, { insumoId: "i2", cantidad: 15, uso: "Macerado" }, { insumoId: "i3", cantidad: 12, uso: "Macerado" }, { insumoId: "i4", cantidad: 1200, uso: "Hervor", minuto: 60 }, { insumoId: "i6", cantidad: 8, uso: "Fermentador" }]
+      ingredientes: [{ insumoId: "i1", cantidad: 200, uso: "Macerado" }, { insumoId: "i2", cantidad: 18.75, uso: "Macerado" }, { insumoId: "i3", cantidad: 15, uso: "Macerado" }, { insumoId: "i4", cantidad: 1500, uso: "Hervor", minuto: 60 }, { insumoId: "i6", cantidad: 10, uso: "Fermentador" }]
     }
   };
   return data;
@@ -1144,9 +1161,9 @@ window.__cbSeed = function() {
     let body;
     if (a) {
       const { t, u } = a, cap = u.cargado || Number(f.rinde) || Number(f.capacidad) || 0, sal = u.saldo == null ? null : Math.max(0, u.saldo), pct = cap && sal != null ? Math.min(100, sal / cap * 100) : 0;
-      body = `<div><strong>${esc(t.estilo || "Sin estilo")}</strong> <span class="muted small mono">${esc(t.codigo)}</span><div class="muted small">Cargado ${fmtF(t.fecha)}</div></div>
+      body = `<div><strong>${esc(t.estilo || "Sin estilo")}</strong> <span class="muted small mono">${esc(t.codigo)}</span><div class="muted small">Cargado ${fmtF(t.fecha)}</div></div>${mod("insumos") && t.coccion ? coccionTxt(t, insCalc()) : ""}
     ${sal != null ? `<div class="row between" style="align-items:baseline"><span class="saldo num">${fmtN(sal)} L</span><span class="muted small num">quedan de ${fmtN(u.cargado)} L</span></div><div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div>${sal > 0.05 && sal < minEnvase() ? `<div class="note">Queda un resto de <strong>${fmtN(sal)} L</strong>, menos que un envase.${S.canWrite ? ` <button class="btn sm" data-act="cerrar-resto" data-id="${t.id}" style="margin-top:6px">Pasar a merma y liberar ${esc(f.nombre)}</button>` : ""}</div>` : sal > 0.05 ? `<div class="small muted">${esc(rindeTxt(sal, D))}</div>` : ""}` : '<div class="small muted">Sin litros cargados</div>'}
-    ${S.canWrite ? `<div class="row" style="gap:6px"><button class="btn pri sm" data-act="envasar" data-id="${t.id}">Envasar</button>${compact ? "" : `<button class="btn sm" data-act="ajustar" data-id="${t.id}">Ajustar litros</button><button class="btn sm" data-act="vaciar" data-id="${t.id}">Vaciar y limpiar</button><button class="btn sm" data-act="perdida-ferm" data-id="${t.id}" style="color:var(--warn)">Registrar pérdida</button><button class="btn sm" data-act="editar-tanda" data-id="${t.id}">Editar</button>`}</div>` : ""}`;
+    ${S.canWrite ? `<div class="row" style="gap:6px"><button class="btn pri sm" data-act="envasar" data-id="${t.id}">Envasar</button>${compact ? "" : `<button class="btn sm" data-act="ajustar" data-id="${t.id}">Ajustar litros</button><button class="btn sm" data-act="vaciar" data-id="${t.id}">Vaciar y limpiar</button><button class="btn sm" data-act="perdida-ferm" data-id="${t.id}" style="color:var(--warn)">Registrar pérdida</button><button class="btn sm" data-act="editar-tanda" data-id="${t.id}">Editar</button>`}${mod("insumos") ? `<button class="btn sm" data-act="coccion" data-id="${t.id}">${t.coccion ? "Corregir cocción" : "Cargar cocción"}</button>` : ""}</div>` : ""}`;
     } else {
       body = `<div><span class="chip" style="--c:var(--st-limpio)">Disponible</span></div>${f.rinde ? `<div class="small muted">Con ${fmtN(f.rinde)} L: ${esc(rindeTxt(f.rinde, D).replace("Alcanza para", "rinde"))}</div>` : ""}${S.canWrite ? `<div><button class="btn sm pri" data-act="nueva-tanda" data-id="${f.id}">Cargar cerveza</button></div>` : ""}`;
     }
@@ -1154,10 +1171,10 @@ window.__cbSeed = function() {
   }
   function tandaRow(t, D) {
     const u = tandaUso(t, D), f = D.F[t.fermentadorId];
-    return `<tr><td class="num" style="white-space:nowrap">${fmtF(t.fecha)}</td><td><strong>${esc(t.estilo || "—")}</strong> <span class="muted small mono">${esc(t.codigo)}</span> ${t.cerrada || u.saldo != null && u.saldo <= 0.05 ? '<span class="chip plain" style="--c:var(--muted)">Terminada</span>' : '<span class="chip plain" style="--c:var(--st-lleno)">En fermentador</span>'}<div class="muted small">${esc((f == null ? void 0 : f.nombre) || t.fermentador || "")}</div></td>
+    return `<tr><td class="num" style="white-space:nowrap">${fmtF(t.fecha)}</td><td><strong>${esc(t.estilo || "—")}</strong> <span class="muted small mono">${esc(t.codigo)}</span> ${t.cerrada || u.saldo != null && u.saldo <= 0.05 ? '<span class="chip plain" style="--c:var(--muted)">Terminada</span>' : '<span class="chip plain" style="--c:var(--st-lleno)">En fermentador</span>'}<div class="muted small">${esc((f == null ? void 0 : f.nombre) || t.fermentador || "")}</div>${mod("insumos") && t.coccion ? coccionTxt(t, insCalc()) : ""}</td>
   <td class="small">${Object.keys(u.parts).length ? Object.entries(u.parts).map(([k, n]) => `${fmtN(n)} × ${esc(k)}`).join("<br>") : '<span class="muted">Sin envasar</span>'}</td>
   <td class="r num" style="white-space:nowrap">${fmtN(u.total)} L${u.cargado != null ? `<div class="muted small">de ${fmtN(u.cargado)} L${t.mosto ? ` (mosto ${fmtN(t.mosto)})` : ""}${u.aj ? ` · ${u.aj < 0 ? "merma " + fmtN(-u.aj) : "ajuste +" + fmtN(u.aj)} L` : ""}</div>` : ""}</td>
-  <td class="r" style="white-space:nowrap"><button class="btn sm" data-act="traza" data-id="${t.id}">Trazabilidad</button> ${S.canWrite ? `<button class="btn sm" data-act="editar-tanda" data-id="${t.id}">Editar</button>` : ""}${t.retenida ? '<div><span class="chip plain" style="--c:var(--warn)">Retenido</span></div>' : ""}</td></tr>`;
+  <td class="r" style="white-space:nowrap"><button class="btn sm" data-act="traza" data-id="${t.id}">Trazabilidad</button> ${S.canWrite ? `<button class="btn sm" data-act="editar-tanda" data-id="${t.id}">Editar</button>` : ""}${S.canWrite && mod("insumos") ? ` <button class="btn sm" data-act="coccion" data-id="${t.id}">Cocción</button>` : ""}${t.retenida ? '<div><span class="chip plain" style="--c:var(--warn)">Retenido</span></div>' : ""}</td></tr>`;
   }
   function vFerm(D) {
     let h = `<div class="row between" style="margin-top:18px"><h2 class="sec" style="margin:0">Fermentadores</h2>${S.canWrite ? `<div class="row" style="gap:6px"><button class="btn" data-act="nuevo-ferm">+ Fermentador</button><button class="btn pri" data-act="nueva-tanda">+ Cargar cerveza</button></div>` : ""}</div>
@@ -1650,7 +1667,7 @@ window.__cbSeed = function() {
     openSheet(editar ? "Editar receta" : copia ? "Nueva versión" : "Nueva receta", `<form class="stack" id="f">
     <div class="grid2"><label class="f" for="re-n">Nombre de la receta<input id="re-n" value="${esc(r.nombre || "")}" required placeholder="IPA de la casa"></label>
     <label class="f" for="re-e">Cerveza<input id="re-e" list="re-el" value="${esc(r.estilo || "")}" placeholder="IPA"><datalist id="re-el">${byName(S.cervezas).map((c) => `<option value="${esc(c.nombre)}"></option>`).join("")}</datalist><span class="h">Con qué nombre sale al cargar el fermentador.</span></label></div>
-    <label class="f" for="re-l">Para cuántos litros es<input id="re-l" type="number" min="1" step="any" inputmode="decimal" value="${esc((_a = r.litros) != null ? _a : "")}" required style="max-width:200px"><span class="h">Las cantidades de abajo son para este volumen. Al cocinar otro, se escalan.</span></label>
+    <label class="f" for="re-l">Para cuántos litros de mosto<input id="re-l" type="number" min="1" step="any" inputmode="decimal" value="${esc((_a = r.litros) != null ? _a : "")}" required style="max-width:200px"><span class="h">Lo que entra al fermentador al salir de la cocción. Las cantidades de abajo son para este volumen; al cocinar otro, se escalan.</span></label>
     <div><h3 class="lbl">Ingredientes</h3><div id="re-items" class="stack" style="gap:10px"></div><button type="button" class="btn sm" id="re-add" style="margin-top:8px">+ Ingrediente</button></div>
     <div><h3 class="lbl">Parámetros objetivo</h3><div class="grid2">
       <label class="f" for="re-og">Densidad inicial ${du}<input id="re-og" inputmode="decimal" value="${denIn(r.og)}"></label>
@@ -1775,6 +1792,161 @@ window.__cbSeed = function() {
       if (del) armDelete(del, async () => {
         await db.doc("recetas/" + id).delete();
         toast("Receta eliminada");
+      });
+    });
+  }
+  const esLev = (id) => {
+    var _a;
+    return ((_a = S.insumos.find((i) => i.id === id)) == null ? void 0 : _a.categoria) === "Levadura";
+  };
+  function coccionCosto(t, R) {
+    const c = t.coccion;
+    if (!c) return null;
+    let tot = 0, falta = false;
+    (c.items || []).forEach((it) => {
+      if (it.costo != null) tot += Number(it.costo);
+      else {
+        const x = R[it.insumoId];
+        if (x && x.avg) tot += Number(it.cantidad) * x.avg;
+        else falta = true;
+      }
+    });
+    return { tot, falta, porL: t.litros ? tot / Number(t.litros) : 0 };
+  }
+  function coccionTxt(t, R) {
+    var _a;
+    const c = t.coccion;
+    if (!c) return "";
+    const k = coccionCosto(t, R), T = by(S.tandas);
+    return `<div class="small"><span class="chip plain" style="--c:var(--soon)">Cocción provisoria</span> ${c.recetaNombre ? esc(c.recetaNombre) + " · " : ""}${k.tot ? `insumos ${fmt$(k.tot)}${k.porL ? " · " + fmtP(k.porL) + "/L" : ""}` : ""}${c.levadura && c.levadura.tipo === "reutilizada" ? `<div class="muted">Levadura reutilizada de ${esc(((_a = T[c.levadura.deTandaId]) == null ? void 0 : _a.codigo) || "otra tanda")} · generación ${fmtN(c.levadura.gen || 2)}</div>` : ""}</div>`;
+  }
+  function sheetCoccion(id, intento) {
+    var _a, _b, _c;
+    const t = S.tandas.find((z) => z.id === id);
+    if (!t) {
+      if (!intento) setTimeout(() => sheetCoccion(id, 1), 400);
+      return;
+    }
+    const c = t.coccion || {}, R = insCalc();
+    const rec0 = S.recetas.find((r) => r.id === (c.recetaId || t.recetaId));
+    const recs = S.recetas.filter((r) => !r.archivada || r.id === (rec0 == null ? void 0 : rec0.id)).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), "es"));
+    const prev = porFecha(S.tandas.filter((x) => x.id !== id && String(x.fecha) <= String(t.fecha)));
+    const ins = byName(S.insumos);
+    const lv = c.levadura || { tipo: "nueva" };
+    openSheet("Cocción · " + t.codigo, `<form class="stack" id="f">
+    <div class="note"><strong>Todo esto es provisorio.</strong> Si en la cocción pasó algo distinto, o te das cuenta después, volvé y corregilo: el stock de insumos se acomoda solo y queda la marca de que se corrigió.</div>
+    <div class="grid2"><label class="f" for="cc-r">Receta<select id="cc-r"><option value="">Sin receta</option>${opts(recs, rec0 == null ? void 0 : rec0.id, (r) => r.nombre + " · para " + fmtN(r.litros) + " L")}</select></label>
+    <label class="f" for="cc-b">Litros de mosto que salieron de la cocción<input id="cc-b" type="number" min="0" step="any" inputmode="decimal" value="${esc((_b = (_a = c.base) != null ? _a : t.mosto) != null ? _b : "")}"><span class="h">Lo que entró al fermentador.</span></label></div>
+    <div><button type="button" class="btn sm" id="cc-calc">Calcular insumos desde la receta</button> <span class="h" id="cc-k"></span></div>
+    <div><h3 class="lbl">Insumos que usaste</h3><div id="cc-items" class="stack" style="gap:8px"></div><button type="button" class="btn sm" id="cc-add" style="margin-top:8px">+ Insumo</button></div>
+    <div><h3 class="lbl">Levadura</h3><div class="seg">
+      <label><input type="radio" name="cc-lv" value="nueva" ${lv.tipo !== "reutilizada" ? "checked" : ""}><span><strong>Nueva</strong><br><span class="small muted">Sale del stock de insumos.</span></span></label>
+      <label><input type="radio" name="cc-lv" value="reutilizada" ${lv.tipo === "reutilizada" ? "checked" : ""}><span><strong>Reutilizada</strong><br><span class="small muted">Cosechada de otra tanda: no se descuenta del stock.</span></span></label></div>
+      <div class="grid2" id="cc-rw" style="margin-top:8px" ${lv.tipo === "reutilizada" ? "" : "hidden"}><label class="f" for="cc-dt">De qué tanda<select id="cc-dt">${prev.length ? opts(prev, lv.deTandaId, (x) => x.codigo + " · " + (x.estilo || "") + " · " + fmtF(x.fecha)) : '<option value="">No hay tandas anteriores</option>'}</select></label>
+      <label class="f" for="cc-g">Generación<input id="cc-g" type="number" min="2" step="1" value="${esc((_c = lv.gen) != null ? _c : "")}" style="max-width:120px"><span class="h">Se calcula sola: la de la tanda de origen + 1.</span></label></div></div>
+    <div class="note row between"><span>Costo de insumos</span><strong class="num" id="cc-tot">$ 0</strong></div>
+    <button class="btn pri" type="submit">Guardar cocción</button></form>`, () => {
+      const box = $("#cc-items");
+      let n = 0;
+      const reut = () => (document.querySelector("input[name=cc-lv]:checked") || {}).value === "reutilizada";
+      const tot = () => {
+        let s = 0;
+        box.querySelectorAll(".cc-row").forEach((d) => {
+          var _a2;
+          const id2 = d.querySelector(".cc-i").value, q = +d.querySelector(".cc-q").value || 0, x = R[id2], sk = reut() && esLev(id2);
+          d.querySelector(".cc-u").textContent = uTxt((_a2 = S.insumos.find((z) => z.id === id2)) == null ? void 0 : _a2.unidad);
+          const prevQ = (c.items || []).filter((it) => it.insumoId === id2).reduce((a, it) => a + Number(it.cantidad || 0), 0), disp = (x ? x.stock : 0) + prevQ;
+          d.querySelector(".cc-s").innerHTML = sk ? '<span class="muted">Reutilizada: no se descuenta</span>' : q > disp + 1e-9 ? `<span style="color:var(--warn)">Hay ${fmtN(disp)}: quedaría en negativo</span>` : `<span class="muted">Hay ${fmtN(disp)}</span>`;
+          d.style.opacity = sk ? 0.55 : 1;
+          if (!sk && x && x.avg) s += q * x.avg;
+        });
+        $("#cc-tot").textContent = fmt$(s);
+      };
+      const add = (it) => {
+        it = it || {};
+        n++;
+        const d = document.createElement("div");
+        d.className = "cc-row grid3";
+        d.style.gridTemplateColumns = "2fr 1fr auto";
+        d.style.alignItems = "end";
+        d.innerHTML = `<label class="f" for="cc-i${n}">Insumo<select id="cc-i${n}" class="cc-i">${opts(ins, it.insumoId)}</select><span class="h cc-s"></span></label><label class="f" for="cc-q${n}">Cantidad (<span class="cc-u"></span>)<input id="cc-q${n}" class="cc-q" type="number" min="0" step="any" inputmode="decimal" value="${esc(it.cantidad != null ? Math.round(it.cantidad * 1e3) / 1e3 : "")}"></label><button type="button" class="btn sm cc-x" aria-label="Quitar" style="margin-bottom:22px">×</button>`;
+        box.appendChild(d);
+        d.querySelector(".cc-i").addEventListener("change", tot);
+        d.querySelector(".cc-q").addEventListener("input", tot);
+        d.querySelector(".cc-x").addEventListener("click", () => {
+          d.remove();
+          tot();
+        });
+      };
+      const fromRec = () => {
+        const r = S.recetas.find((z) => z.id === val("cc-r"));
+        const b = +val("cc-b");
+        if (!r) {
+          toast("Elegí una receta.");
+          return;
+        }
+        if (!(b > 0)) {
+          toast("Poné los litros de mosto.");
+          return;
+        }
+        const k = b / r.litros, g = {};
+        (r.ingredientes || []).forEach((x) => {
+          g[x.insumoId] = (g[x.insumoId] || 0) + Number(x.cantidad || 0) * k;
+        });
+        box.innerHTML = "";
+        Object.keys(g).forEach((k2) => add({ insumoId: k2, cantidad: g[k2] }));
+        $("#cc-k").textContent = `Receta ×${(Math.round(k * 100) / 100).toLocaleString("es-AR")} (para ${fmtN(b)} L). Corregí lo que hayas usado distinto.`;
+        tot();
+      };
+      $("#cc-calc").addEventListener("click", fromRec);
+      $("#cc-add").addEventListener("click", () => {
+        add();
+        tot();
+      });
+      if ((c.items || []).length) c.items.forEach(add);
+      else if (rec0 && +val("cc-b") > 0) fromRec();
+      else add();
+      const gen = () => {
+        var _a2, _b2;
+        const o = S.tandas.find((z) => z.id === val("cc-dt"));
+        const g = $("#cc-g");
+        if (o && !g.dataset.m) g.value = (((_b2 = (_a2 = o.coccion) == null ? void 0 : _a2.levadura) == null ? void 0 : _b2.tipo) === "reutilizada" ? Number(o.coccion.levadura.gen || 2) : 1) + 1;
+      };
+      $("#cc-g").addEventListener("input", () => {
+        $("#cc-g").dataset.m = "1";
+      });
+      $("#cc-dt").addEventListener("change", gen);
+      document.querySelectorAll("input[name=cc-lv]").forEach((x) => x.addEventListener("change", () => {
+        $("#cc-rw").hidden = !reut();
+        if (reut() && !val("cc-g")) gen();
+        tot();
+      }));
+      tot();
+      submitOnce($("#f"), () => {
+        const rs = reut();
+        const items = [...box.querySelectorAll(".cc-row")].map((d) => ({ insumoId: d.querySelector(".cc-i").value, cantidad: Math.round((+d.querySelector(".cc-q").value || 0) * 1e3) / 1e3 })).filter((x) => x.cantidad > 0 && !(rs && esLev(x.insumoId)));
+        if (rs && !val("cc-dt")) {
+          toast("Elegí de qué tanda viene la levadura.");
+          return false;
+        }
+        const b = val("cc-b") === "" ? null : +val("cc-b");
+        const r = S.recetas.find((z) => z.id === val("cc-r"));
+        const now = (/* @__PURE__ */ new Date()).toISOString();
+        items.forEach((x) => {
+          const a = R[x.insumoId];
+          x.costo = a && a.avg ? Math.round(x.cantidad * a.avg * 100) / 100 : null;
+        });
+        const costo = items.reduce((s, x) => s + (x.costo || 0), 0);
+        const coccion = { recetaId: (r == null ? void 0 : r.id) || null, recetaNombre: (r == null ? void 0 : r.nombre) || null, base: b, items, costo: Math.round(costo * 100) / 100, levadura: rs ? { tipo: "reutilizada", deTandaId: val("cc-dt"), gen: +val("cc-g") || 2 } : { tipo: "nueva" }, provisorio: true, actualizada: now, correcciones: (c.correcciones || 0) + (t.coccion ? 1 : 0), por: S.uid };
+        return W(async () => {
+          for (const m of S.movins.filter((m2) => m2.tandaId === id && m2.tipo === "consumo" && !m2.anulado)) await db.doc("movins/" + m.id).update({ anulado: true, anuladoEn: now, anuladoMotivo: "Cocción corregida" });
+          for (const x of items) await db.collection("movins").add({ insumoId: x.insumoId, tipo: "consumo", cantidad: -x.cantidad, motivo: `Cocción ${t.codigo}${t.estilo ? " · " + t.estilo : ""}`, tandaId: id, fecha: t.fecha || hoy(), t: now, por: S.uid });
+          const up = { coccion, recetaId: (r == null ? void 0 : r.id) || null };
+          if (b != null) up.mosto = b;
+          await db.doc("tandas/" + id).update(up);
+          closeSheet();
+          toast(t.coccion ? "Cocción corregida · stock actualizado" : "Cocción guardada · insumos descontados");
+        });
       });
     });
   }
@@ -2545,6 +2717,7 @@ window.__cbSeed = function() {
     openSheet(id ? "Editar elaboración" : "Cargar cerveza en fermentador", `<form class="stack" id="f">
     <label class="f" for="t-fe">Fermentador<select id="t-fe"><option value="">Sin fermentador</option>${opts(byName(S.fermentadores), t.fermentadorId, (f) => f.nombre + (f.capacidad ? ` (${fmtN(f.capacidad)} L)` : ""))}</select>${S.fermentadores.length ? "" : '<span class="h">Todavía no cargaste fermentadores.</span>'}</label>
     <div class="note bad" id="t-warn" hidden></div>
+    ${mod("recetas") && S.recetas.some((x) => !x.archivada) ? `<label class="f" for="t-r">Receta (opcional)<select id="t-r"><option value="">Sin receta</option>${opts(S.recetas.filter((x) => !x.archivada || x.id === t.recetaId).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), "es")), t.recetaId, (x) => x.nombre + " · para " + fmtN(x.litros) + " L")}</select>${mod("insumos") && !id ? '<span class="h">Al guardar, te muestra los insumos para descontar del stock. Todo queda corregible.</span>' : ""}</label>` : ""}
     <div class="grid2"><label class="f" for="t-e">Cerveza / estilo<input id="t-e" value="${esc(t.estilo || "")}" list="t-dl" required placeholder="Golden, IPA…"><datalist id="t-dl">${byName(S.cervezas).map((c) => `<option value="${esc(c.nombre)}">`).join("")}</datalist></label>
     <label class="f" for="t-c">Lote / código<input id="t-c" class="mono" value="${esc(t.codigo || "T-" + String(max + 1).padStart(3, "0"))}" required></label></div>
     <div class="grid2"><label class="f" for="t-l">Litros de cerveza en el fermentador<input id="t-l" placeholder="Ej.: 380" type="number" step="any" min="0" value="${esc((_b = t.litros) != null ? _b : "")}" inputmode="decimal" required><span class="h">Para envasar. Se propone lo habitual del fermentador; cambialo si salió otra cantidad.</span></label>
@@ -2564,6 +2737,11 @@ window.__cbSeed = function() {
       };
       $("#t-fe").addEventListener("change", warn);
       warn();
+      const tr = $("#t-r");
+      if (tr) tr.addEventListener("change", () => {
+        const x = S.recetas.find((z) => z.id === tr.value);
+        if (x && x.estilo) $("#t-e").value = x.estilo;
+      });
       if (!id) {
         const nl = $("#t-l");
         let auto = true;
@@ -2595,6 +2773,7 @@ window.__cbSeed = function() {
       }
       submitOnce($("#f"), () => {
         const d = { fermentadorId: val("t-fe") || null, codigo: val("t-c"), estilo: val("t-e"), fecha: val("t-f") || hoy(), litros: val("t-l") === "" ? null : +val("t-l"), mosto: val("t-mo") === "" ? null : +val("t-mo"), notas: val("t-n") };
+        if ($("#t-r")) d.recetaId = val("t-r") || null;
         if (!d.codigo || !d.estilo) {
           toast("Completá la cerveza y el código.");
           return false;
@@ -2610,7 +2789,13 @@ window.__cbSeed = function() {
             const f = S.fermentadores.find((z) => z.id === d.fermentadorId);
             const a = f && tandaActiva(f, derive());
             if (a) await cerrarTanda(a.t, "Fermentador vaciado para cargar otra cerveza");
-            await db.collection("tandas").add({ ...d, ajustes: [], por: S.uid, creado: (/* @__PURE__ */ new Date()).toISOString() });
+            const ref = await db.collection("tandas").add({ ...d, ajustes: [], por: S.uid, creado: (/* @__PURE__ */ new Date()).toISOString() });
+            if (d.recetaId && mod("insumos") && ref && ref.id) {
+              closeSheet();
+              toast("Elaboración guardada");
+              setTimeout(() => sheetCoccion(ref.id), 350);
+              return;
+            }
           }
           closeSheet();
           toast("Elaboración guardada");
@@ -3050,7 +3235,8 @@ window.__cbSeed = function() {
    <li><strong>Clientes</strong>: Bar La Esquina tiene barriles demorados según su plazo de devolución.</li>
    <li><strong>Stock</strong>: lo que está listo para vender. Probá <em>Llenar / envasar</em> con la IPA de F2.</li>
    <li><strong>Recetas</strong>: Golden, IPA y Stout con sus ingredientes, parámetros y costo por litro. Probá cambiar los litros para ver las cantidades escaladas.</li>
-   <li><strong>Insumos</strong>: stock de maltas, lúpulos y envases vacíos con su costo, compras y proveedores. El lúpulo Cascade y la levadura están bajo el mínimo.</li>
+   <li><strong>Insumos</strong>: stock de maltas, lúpulos y envases vacíos con su costo, compras y proveedores. Algunos lúpulos y la levadura están bajo el mínimo.</li>
+   <li><strong>Cocción</strong>: en Fermentadores, la Stout T-003 tiene su cocción cargada con receta y levadura reutilizada de la T-002. Tocá <em>Corregir cocción</em>: todo es provisorio.</li>
    <li>El barril <strong>B-012</strong> tiene un problema reportado: mirá la alerta de arriba y su ficha.</li></ol>
   <div class="row" style="gap:6px"><button class="btn sm pri" data-act="demo-ocultar">Entendido, ocultar</button><button class="btn sm" data-act="demo-cero">Empezar con mis datos</button></div></div>`;
   }
@@ -3654,6 +3840,10 @@ window.__cbSeed = function() {
         break;
       case "nueva-receta":
         sheetReceta();
+        break;
+      case "coccion":
+        closeSheet();
+        sheetCoccion(id);
         break;
       case "ver-receta":
         sheetVerReceta(id);
