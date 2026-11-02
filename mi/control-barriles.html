@@ -1442,6 +1442,35 @@ details.cl summary::-webkit-details-marker{display:none}
       });
     });
   }
+  function nuevoInsumoInline(row,selCls,after){
+  if(!S.canWrite)return;
+  const grid=row.querySelector('.grid2')||row.firstElementChild;if(!grid)return;
+  const lnk=document.createElement('button');lnk.type='button';lnk.textContent='+ Nuevo insumo';
+  lnk.setAttribute('style','background:none;border:0;padding:6px 0 0;color:var(--accent);font:600 13px var(--f-body);cursor:pointer;text-decoration:underline;display:block');
+  const p=document.createElement('div');p.hidden=true;p.className='note';p.style.marginTop='8px';
+  p.innerHTML=`<div class="grid2"><label class="f">Nombre del insumo<input class="ni-n" placeholder="Malta Munich, Levadura S-04…"></label><label class="f">Categoría<select class="ni-c">${CATS.map(c=>`<option>${c}</option>`).join('')}</select></label></div>
+    <div class="grid2" style="margin-top:8px"><label class="f">Se cuenta en<select class="ni-u">${UNIS.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('')}</select></label><div class="row" style="gap:6px;align-items:end"><button type="button" class="btn sm pri ni-ok">Crear y usar</button><button type="button" class="btn sm ni-no">Cancelar</button></div></div>
+    <p class="h" style="margin:6px 0 0">Queda guardado en Insumos, sin stock. El stock lo sumás después cargando una compra.</p>`;
+  grid.after(lnk,p);
+  const cat=p.querySelector('.ni-c'),uni=p.querySelector('.ni-u');
+  const defU={'Malta':'kg','Lúpulo':'g','Levadura':'u','Adjunto':'kg','Envase vacío':'u','Limpieza':'kg','Gas':'kg'};
+  cat.value='Malta';
+  cat.addEventListener('change',()=>{uni.value=defU[cat.value]||'u';});uni.value=defU[cat.value]||'u';
+  lnk.addEventListener('click',()=>{p.hidden=!p.hidden;if(!p.hidden)p.querySelector('.ni-n').focus();});
+  p.querySelector('.ni-no').addEventListener('click',()=>{p.hidden=true;});
+  p.querySelector('.ni-n').addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();p.querySelector('.ni-ok').click();}});
+  p.querySelector('.ni-ok').addEventListener('click',async()=>{
+    const nombre=p.querySelector('.ni-n').value.trim();if(!nombre){toast('Poné el nombre del insumo.');return;}
+    const ex=S.insumos.find(z=>String(z.nombre).toLowerCase()===nombre.toLowerCase());
+    let id=ex?ex.id:null;
+    if(!ex){const d={nombre:nombre,categoria:cat.value,unidad:uni.value,minimo:null,notas:'',creado:new Date().toISOString()};
+      const ok=await W(async()=>{const ref=await db.collection('insumos').add(d);id=ref&&ref.id;if(id)S.insumos.push(Object.assign({id:id},d));});
+      if(!ok||!id)return;}
+    document.querySelectorAll('#sheet-b '+selCls).forEach(s=>{if(![...s.options].some(o=>o.value===id)){const o=document.createElement('option');o.value=id;o.textContent=nombre;s.appendChild(o);}});
+    const s=row.querySelector(selCls);if(s){s.value=id;s.dispatchEvent(new Event('change'));}
+    p.hidden=true;p.querySelector('.ni-n').value='';toast(ex?'Ya existía: quedó elegido':'Insumo creado: '+nombre);if(after)after();
+  });
+}
   function sheetReceta(id, copia) {
     var _a, _b, _c, _d, _e, _f;
     const base = id ? S.recetas.find((z) => z.id === id) : null;
@@ -1491,7 +1520,7 @@ details.cl summary::-webkit-details-marker{display:none}
         d.className = "re-row panel";
         d.style.padding = "10px";
         const defU = g.uso || "Macerado";
-        d.innerHTML = `<div class="grid2"><label class="f" for="re-i${n}">Insumo<select id="re-i${n}" class="re-i">${opts(ins, g.insumoId)}</select></label><label class="f" for="re-q${n}">Cantidad (<span class="re-un"></span>)<input id="re-q${n}" class="re-q" type="number" min="0" step="any" inputmode="decimal" value="${esc((_a2 = g.cantidad) != null ? _a2 : "")}"></label></div>
+        d.innerHTML = `<div class="grid2"><label class="f" for="re-i${n}">Insumo<select id="re-i${n}" class="re-i">${opts(byName(S.insumos), g.insumoId)}</select></label><label class="f" for="re-q${n}">Cantidad (<span class="re-un"></span>)<input id="re-q${n}" class="re-q" type="number" min="0" step="any" inputmode="decimal" value="${esc((_a2 = g.cantidad) != null ? _a2 : "")}"></label></div>
       <div class="grid2" style="margin-top:8px"><label class="f" for="re-u${n}">Cuándo se usa<select id="re-u${n}" class="re-u">${USOS.map((u) => `<option ${defU === u ? "selected" : ""}>${u}</option>`).join("")}</select></label>
       <label class="f re-mw" for="re-m${n}">Minuto (desde el final)<input id="re-m${n}" class="re-m" type="number" min="0" step="1" value="${esc((_b2 = g.minuto) != null ? _b2 : "")}" placeholder="60"></label>
       <label class="f re-dw" for="re-d${n}">Días<input id="re-d${n}" class="re-d" type="number" min="0" step="1" value="${esc((_c2 = g.dias) != null ? _c2 : "")}" placeholder="4"></label></div>
@@ -1507,6 +1536,7 @@ details.cl summary::-webkit-details-marker{display:none}
         });
         d.querySelector(".re-u").addEventListener("change", () => vis(d));
         d.querySelector(".re-x").addEventListener("click", () => d.remove());
+        nuevoInsumoInline(d, ".re-i", () => vis(d));
         if (!g.insumoId) d.querySelector(".re-i").dispatchEvent(new Event("change"));
         vis(d);
       };
@@ -1666,7 +1696,7 @@ details.cl summary::-webkit-details-marker{display:none}
         d.className = "cc-row grid3";
         d.style.gridTemplateColumns = "2fr 1fr auto";
         d.style.alignItems = "end";
-        d.innerHTML = `<label class="f" for="cc-i${n}">Insumo<select id="cc-i${n}" class="cc-i">${opts(ins, it.insumoId)}</select><span class="h cc-s"></span></label><label class="f" for="cc-q${n}">Cantidad (<span class="cc-u"></span>)<input id="cc-q${n}" class="cc-q" type="number" min="0" step="any" inputmode="decimal" value="${esc(it.cantidad != null ? Math.round(it.cantidad * 1e3) / 1e3 : "")}"></label><button type="button" class="btn sm cc-x" aria-label="Quitar" style="margin-bottom:22px">×</button>`;
+        d.innerHTML = `<label class="f" for="cc-i${n}">Insumo<select id="cc-i${n}" class="cc-i">${opts(byName(S.insumos), it.insumoId)}</select><span class="h cc-s"></span></label><label class="f" for="cc-q${n}">Cantidad (<span class="cc-u"></span>)<input id="cc-q${n}" class="cc-q" type="number" min="0" step="any" inputmode="decimal" value="${esc(it.cantidad != null ? Math.round(it.cantidad * 1e3) / 1e3 : "")}"></label><button type="button" class="btn sm cc-x" aria-label="Quitar" style="margin-bottom:22px">×</button>`;
         box.appendChild(d);
         d.querySelector(".cc-i").addEventListener("change", tot);
         d.querySelector(".cc-q").addEventListener("input", tot);
@@ -1674,6 +1704,7 @@ details.cl summary::-webkit-details-marker{display:none}
           d.remove();
           tot();
         });
+        nuevoInsumoInline(d, ".cc-i", tot);
       };
       const fromRec = () => {
         const r = S.recetas.find((z) => z.id === val("cc-r"));
