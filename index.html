@@ -1582,7 +1582,7 @@ window.__cbSeed = function() {
     v = Number(String(v).replace(",", "."));
     if (!(v > 0)) return null;
     if (enPlato()) return Math.round(pToSg(v) * 1e4) / 1e4;
-    return v > 1.5 ? Math.round((1 + v / 1e3) * 1e4) / 1e4 : v;
+    return v >= 500 ? Math.round(v / 1e3 * 1e4) / 1e4 : v > 1.5 ? Math.round((1 + v / 1e3) * 1e4) / 1e4 : v;
   };
   const abvDe = (og, fg) => og && fg && og > fg ? (og - fg) * 131.25 : null;
   const USOS = ["Macerado", "Hervor", "Whirlpool", "Fermentador", "Dry hop", "Otro"];
@@ -1606,7 +1606,7 @@ window.__cbSeed = function() {
       const c = recCosto(r, R), abv = abvDe(r.og, r.fg);
       return `<div class="panel ferm" data-act="ver-receta" data-id="${r.id}" style="cursor:pointer"><div class="row between" style="align-items:baseline"><span class="fn">${esc(r.nombre)}</span><span class="muted small num">${fmtN(r.litros)} L</span></div>
     ${r.estilo && r.estilo !== r.nombre ? `<div class="muted small">${esc(r.estilo)}</div>` : ""}
-    <div class="bstats" style="grid-template-columns:repeat(4,1fr)"><div><small>DI</small><b>${denTxt(r.og)}</b></div><div><small>DF</small><b>${denTxt(r.fg)}</b></div><div><small>Alcohol</small><b>${abv ? fmtN(Math.round(abv * 10) / 10) + "%" : "—"}</b></div><div><small>IBU</small><b>${r.ibu ? fmtN(r.ibu) : "—"}</b></div></div>
+    <div class="bstats" style="grid-template-columns:repeat(4,1fr)"><div><small>DI</small><b>${denTxt(r.og)}</b></div><div><small>DF</small><b>${denTxt(r.fg)}</b></div><div><small>ABV</small><b>${abv ? fmtN(Math.round(abv * 10) / 10) + "%" : "—"}</b></div><div><small>IBU</small><b>${r.ibu ? fmtN(r.ibu) : "—"}</b></div></div>
     <div class="bfoot"><span>${(r.ingredientes || []).length} ingredientes</span>${c.t ? `<span>Costo insumos <strong class="num" style="color:var(--ink)">${fmt$(c.t)}</strong> · ${fmtP(c.porL)}/L${c.falta ? " (faltan precios)" : ""}</span>` : ""}</div></div>`;
     }).join("") + `</div>`;
     const ar = S.recetas.filter((r) => r.archivada);
@@ -1709,9 +1709,10 @@ function nuevoInsumoInline(row,selCls,after){
     <div><h3 class="lbl">Ingredientes</h3><div id="re-items" class="stack" style="gap:10px"></div><button type="button" class="btn sm" id="re-add" style="margin-top:8px">+ Ingrediente</button></div>
     <div><h3 class="lbl">Parámetros objetivo</h3><div class="grid2">
       <label class="f" for="re-og">Densidad inicial ${du}<input id="re-og" inputmode="decimal" value="${denIn(r.og)}"></label>
-      <label class="f" for="re-fg">Densidad final ${du}<input id="re-fg" inputmode="decimal" value="${denIn(r.fg)}"><span class="h" id="re-abv"></span></label>
+      <label class="f" for="re-fg">Densidad final ${du}<input id="re-fg" inputmode="decimal" value="${denIn(r.fg)}"></label>
       <label class="f" for="re-ibu">Amargor (IBU)<input id="re-ibu" type="number" min="0" step="any" inputmode="decimal" value="${esc((_b = r.ibu) != null ? _b : "")}"></label>
-      <label class="f" for="re-co">Color<span class="row" style="gap:6px;flex-wrap:nowrap"><input id="re-co" type="number" min="0" step="any" inputmode="decimal" value="${esc((_c = r.color) != null ? _c : "")}"><select id="re-cu" style="width:auto">${["EBC", "SRM"].map((u) => `<option ${r.colorU === u ? "selected" : ""}>${u}</option>`).join("")}</select></span></label></div></div>
+      <label class="f" for="re-co">Color<span class="row" style="gap:6px;flex-wrap:nowrap"><input id="re-co" type="number" min="0" step="any" inputmode="decimal" value="${esc((_c = r.color) != null ? _c : "")}"><select id="re-cu" style="width:auto">${["EBC", "SRM"].map((u) => `<option ${r.colorU === u ? "selected" : ""}>${u}</option>`).join("")}</select></span></label>
+      <div class="f" style="display:grid;gap:5px;font-weight:600;font-size:13.5px"><span>Alcohol estimado (ABV)</span><div id="re-abv" class="note num" style="font-size:18px;font-weight:700;padding:6px 11px">—</div><span class="h">Se calcula solo: (densidad inicial − final) × 131,25.</span></div></div></div>
     <div><h3 class="lbl">Macerado</h3><div id="re-mac" class="stack" style="gap:6px"></div><button type="button" class="btn sm" id="re-madd" style="margin-top:8px">+ Escalón</button></div>
     <div class="grid3" style="grid-template-columns:1fr 1fr 1fr"><label class="f" for="re-h">Hervor (min)<input id="re-h" type="number" min="0" step="1" value="${esc((_d = r.hervor) != null ? _d : "")}"></label>
       <label class="f" for="re-ft">Fermentación (°C)<input id="re-ft" type="number" step="any" inputmode="decimal" value="${esc((_e = r.fermTemp) != null ? _e : "")}"></label>
@@ -1774,7 +1775,8 @@ function nuevoInsumoInline(row,selCls,after){
       $("#re-madd").addEventListener("click", () => addM());
       const ab = () => {
         const a = abvDe(denOut(val("re-og")), denOut(val("re-fg")));
-        $("#re-abv").textContent = a ? `Alcohol estimado: ${fmtN(Math.round(a * 10) / 10)}%` : "";
+        const o0 = denOut(val("re-og")), f0 = denOut(val("re-fg"));
+        $("#re-abv").textContent = a ? `${fmtN(Math.round(a * 10) / 10)} %` : o0 && f0 ? "La final tiene que ser menor que la inicial" : "Cargá la densidad inicial y la final";
       };
       $("#re-og").addEventListener("input", ab);
       $("#re-fg").addEventListener("input", ab);
@@ -4346,6 +4348,7 @@ function nuevoInsumoInline(row,selCls,after){
 /* Novedades para testers */
 (function(){
 var NOV=[
+ {id:'2026-11-02c',f:'2 nov',t:['Recetas: el alcohol (ABV) se ve en su propio recuadro y se calcula solo al poner la densidad inicial y final.','La densidad se puede escribir 1.010, 1,010 o 1010: las tres valen.']},
  {id:'2026-11-02b',f:'2 nov',t:['Ingredientes más claros: cada fila se pinta del color de su categoría (malta, lúpulo, levadura…) y muestra una etiqueta.','La lista de insumos viene agrupada por categoría, y una fila nueva empieza vacía: ya no se elige un producto solo.']},
  {id:'2026-11-02',f:'2 nov',t:['Recetas y cocción: podés crear una malta, lúpulo o levadura nueva sin salir de la hoja, con "+ Nuevo insumo" debajo de cada ingrediente.']},
  {id:'2026-10-27',f:'27 oct',t:['Cocción con receta: al cargar cerveza elegís la receta y se descuentan solos los insumos, escalados a los litros que salieron.','Todo es provisorio: "Corregir cocción" acomoda el stock y deja la marca.','Levadura nueva o reutilizada (con generación), y refuerzo si no arrancó.','Densidad real contra la de la receta, y costo real por litro.','Ajustes → Copia de seguridad: explica dónde quedan tus datos.']},
