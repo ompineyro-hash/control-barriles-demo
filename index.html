@@ -4330,5 +4330,31 @@ window.__cbSeed = function() {
 })();
 </script>
 
+<script>
+/* Novedades para testers */
+(function(){
+var NOV=[
+ {id:'2026-11-02',f:'2 nov',t:['Recetas y cocción: podés crear una malta, lúpulo o levadura nueva sin salir de la hoja, con "+ Nuevo insumo" debajo de cada ingrediente.']},
+ {id:'2026-10-27',f:'27 oct',t:['Cocción con receta: al cargar cerveza elegís la receta y se descuentan solos los insumos, escalados a los litros que salieron.','Todo es provisorio: "Corregir cocción" acomoda el stock y deja la marca.','Levadura nueva o reutilizada (con generación), y refuerzo si no arrancó.','Densidad real contra la de la receta, y costo real por litro.','Ajustes → Copia de seguridad: explica dónde quedan tus datos.']},
+ {id:'2026-10-26',f:'26 oct',t:['Recetas: ingredientes, densidad (específica o Plato), IBU, color, macerado y costo por litro.','Insumos: stock con mínimo y aviso, compras, proveedores y costo promedio.','Clientes: tipo mayorista/reventa (con rubro) o minorista, con filtros.']}
+];
+var K='cb-nov-visto',visto='';try{visto=localStorage.getItem(K)||'';}catch(e){}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var box=document.createElement('div');box.id='novedades';box.className='wrap';box.style.paddingBottom='0';
+var main=document.getElementById('main');if(!main)return;main.parentNode.insertBefore(box,main);
+function pinta(todo){
+  var L=todo?NOV:NOV.filter(function(n){return n.id>visto;});if(!visto&&!todo)L=NOV.slice(0,1);
+  if(!L.length){box.innerHTML='<div style="margin-top:10px;text-align:right"><button type="button" class="btn sm" id="nov-ver">Ver novedades</button></div>';}
+  else box.innerHTML='<div class="panel card" style="margin-top:14px;border-color:var(--ok);border-width:2px"><div class="row between"><strong>'+(todo?'Todas las novedades':'Novedades desde tu última visita')+'</strong><span class="chip plain" style="--c:var(--ok)">Nuevo</span></div>'+
+    L.map(function(n){return '<div><div class="muted small" style="font-weight:600">'+esc(n.f)+'</div><ul class="small" style="margin:4px 0 0;padding-left:18px">'+n.t.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';}).join('')+
+    '<div class="row" style="gap:6px"><button type="button" class="btn sm pri" id="nov-ok">Entendido</button>'+(todo?'':'<button type="button" class="btn sm" id="nov-todo">Ver todas</button>')+'</div></div>';
+  var ok=document.getElementById('nov-ok'),td=document.getElementById('nov-todo'),vr=document.getElementById('nov-ver');
+  if(ok)ok.onclick=function(){visto=NOV[0].id;try{localStorage.setItem(K,visto);}catch(e){}pinta(false);};
+  if(td)td.onclick=function(){pinta(true);};
+  if(vr)vr.onclick=function(){pinta(true);};
+}
+pinta(false);
+})();
+</script>
 </body>
 </html>
