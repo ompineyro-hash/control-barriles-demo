@@ -1442,16 +1442,24 @@ details.cl summary::-webkit-details-marker{display:none}
       });
     });
   }
-  function nuevoInsumoInline(row,selCls,after){
+  const CATCOL={'Malta':'var(--st-lleno)','Lúpulo':'var(--ok)','Levadura':'var(--st-cliente)','Adjunto':'var(--st-sucio)','Envase vacío':'var(--st-limpio)','Limpieza':'var(--soon)','Gas':'var(--st-baja)','Otro':'var(--muted)'};
+function insOpts(sel){const g={};S.insumos.forEach(i=>{const c=CATS.indexOf(i.categoria)>=0?i.categoria:'Otro';(g[c]=g[c]||[]).push(i);});
+  return '<option value="">— Elegí un insumo —</option>'+CATS.filter(c=>g[c]).map(c=>`<optgroup label="${esc(c)}">`+byName(g[c]).map(i=>`<option value="${i.id}" ${i.id===sel?'selected':''}>${esc(i.nombre)}</option>`).join('')+'</optgroup>').join('');}
+function pintaIns(row,selCls){const s=row.querySelector(selCls);if(!s)return;const i=S.insumos.find(z=>z.id===s.value);const c=i?(CATCOL[i.categoria]||'var(--muted)'):'var(--line)';
+  row.style.borderLeft='6px solid '+c;row.style.paddingLeft='10px';row.style.borderRadius='6px';
+  let t=row.querySelector('.ins-cat');if(!t){t=document.createElement('span');t.className='chip plain ins-cat';t.style.justifySelf='start';s.parentNode.insertBefore(t,s);}
+  t.style.setProperty('--c',c);t.textContent=i?i.categoria||'Otro':'Sin elegir';}
+function nuevoInsumoInline(row,selCls,after){
+  const s0=row.querySelector(selCls);if(s0){s0.addEventListener('change',()=>pintaIns(row,selCls));pintaIns(row,selCls);}
   if(!S.canWrite)return;
-  const grid=row.querySelector('.grid2')||row.firstElementChild;if(!grid)return;
+  const grid=row.querySelector('.grid2');const lab=s0&&s0.closest('label');
   const lnk=document.createElement('button');lnk.type='button';lnk.textContent='+ Nuevo insumo';
-  lnk.setAttribute('style','background:none;border:0;padding:6px 0 0;color:var(--accent);font:600 13px var(--f-body);cursor:pointer;text-decoration:underline;display:block');
+  lnk.setAttribute('style','background:none;border:0;padding:6px 0 0;color:var(--accent);font:600 13px var(--f-body);cursor:pointer;text-decoration:underline;display:block;justify-self:start');
   const p=document.createElement('div');p.hidden=true;p.className='note';p.style.marginTop='8px';
   p.innerHTML=`<div class="grid2"><label class="f">Nombre del insumo<input class="ni-n" placeholder="Malta Munich, Levadura S-04…"></label><label class="f">Categoría<select class="ni-c">${CATS.map(c=>`<option>${c}</option>`).join('')}</select></label></div>
     <div class="grid2" style="margin-top:8px"><label class="f">Se cuenta en<select class="ni-u">${UNIS.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('')}</select></label><div class="row" style="gap:6px;align-items:end"><button type="button" class="btn sm pri ni-ok">Crear y usar</button><button type="button" class="btn sm ni-no">Cancelar</button></div></div>
     <p class="h" style="margin:6px 0 0">Queda guardado en Insumos, sin stock. El stock lo sumás después cargando una compra.</p>`;
-  grid.after(lnk,p);
+  if(grid)grid.after(lnk,p);else{if(lab)lab.after(lnk);else row.appendChild(lnk);row.after(p);const x=row.querySelector('.cc-x,.re-x');if(x)x.addEventListener('click',()=>p.remove());}
   const cat=p.querySelector('.ni-c'),uni=p.querySelector('.ni-u');
   const defU={'Malta':'kg','Lúpulo':'g','Levadura':'u','Adjunto':'kg','Envase vacío':'u','Limpieza':'kg','Gas':'kg'};
   cat.value='Malta';
@@ -1466,7 +1474,7 @@ details.cl summary::-webkit-details-marker{display:none}
     if(!ex){const d={nombre:nombre,categoria:cat.value,unidad:uni.value,minimo:null,notas:'',creado:new Date().toISOString()};
       const ok=await W(async()=>{const ref=await db.collection('insumos').add(d);id=ref&&ref.id;if(id)S.insumos.push(Object.assign({id:id},d));});
       if(!ok||!id)return;}
-    document.querySelectorAll('#sheet-b '+selCls).forEach(s=>{if(![...s.options].some(o=>o.value===id)){const o=document.createElement('option');o.value=id;o.textContent=nombre;s.appendChild(o);}});
+    document.querySelectorAll('#sheet-b '+selCls).forEach(s=>{const v=s.value;s.innerHTML=insOpts(v);s.value=v;});
     const s=row.querySelector(selCls);if(s){s.value=id;s.dispatchEvent(new Event('change'));}
     p.hidden=true;p.querySelector('.ni-n').value='';toast(ex?'Ya existía: quedó elegido':'Insumo creado: '+nombre);if(after)after();
   });
@@ -1520,7 +1528,7 @@ details.cl summary::-webkit-details-marker{display:none}
         d.className = "re-row panel";
         d.style.padding = "10px";
         const defU = g.uso || "Macerado";
-        d.innerHTML = `<div class="grid2"><label class="f" for="re-i${n}">Insumo<select id="re-i${n}" class="re-i">${opts(byName(S.insumos), g.insumoId)}</select></label><label class="f" for="re-q${n}">Cantidad (<span class="re-un"></span>)<input id="re-q${n}" class="re-q" type="number" min="0" step="any" inputmode="decimal" value="${esc((_a2 = g.cantidad) != null ? _a2 : "")}"></label></div>
+        d.innerHTML = `<div class="grid2"><label class="f" for="re-i${n}">Insumo<select id="re-i${n}" class="re-i">${insOpts(g.insumoId)}</select></label><label class="f" for="re-q${n}"><span>Cantidad (<span class="re-un"></span>)</span><input id="re-q${n}" class="re-q" type="number" min="0" step="any" inputmode="decimal" value="${esc((_a2 = g.cantidad) != null ? _a2 : "")}"></label></div>
       <div class="grid2" style="margin-top:8px"><label class="f" for="re-u${n}">Cuándo se usa<select id="re-u${n}" class="re-u">${USOS.map((u) => `<option ${defU === u ? "selected" : ""}>${u}</option>`).join("")}</select></label>
       <label class="f re-mw" for="re-m${n}">Minuto (desde el final)<input id="re-m${n}" class="re-m" type="number" min="0" step="1" value="${esc((_b2 = g.minuto) != null ? _b2 : "")}" placeholder="60"></label>
       <label class="f re-dw" for="re-d${n}">Días<input id="re-d${n}" class="re-d" type="number" min="0" step="1" value="${esc((_c2 = g.dias) != null ? _c2 : "")}" placeholder="4"></label></div>
@@ -1577,7 +1585,11 @@ details.cl summary::-webkit-details-marker{display:none}
             o.dias = x === "" ? null : +x;
           }
           return o;
-        }).filter((g) => g.cantidad > 0);
+        }).filter((g) => g.cantidad > 0 && g.insumoId);
+        if ([...box.querySelectorAll(".re-row")].some((d2) => !d2.querySelector(".re-i").value && +d2.querySelector(".re-q").value > 0)) {
+          toast("Hay un ingrediente con cantidad pero sin insumo elegido.");
+          return false;
+        }
         const macerado = [...mac.querySelectorAll(".re-mrow")].map((d2) => ({ temp: +d2.querySelector(".re-mt").value || null, min: +d2.querySelector(".re-mm").value || null })).filter((m) => m.temp || m.min);
         const num = (k) => {
           const v = val(k);
@@ -1696,7 +1708,7 @@ details.cl summary::-webkit-details-marker{display:none}
         d.className = "cc-row grid3";
         d.style.gridTemplateColumns = "2fr 1fr auto";
         d.style.alignItems = "end";
-        d.innerHTML = `<label class="f" for="cc-i${n}">Insumo<select id="cc-i${n}" class="cc-i">${opts(byName(S.insumos), it.insumoId)}</select><span class="h cc-s"></span></label><label class="f" for="cc-q${n}">Cantidad (<span class="cc-u"></span>)<input id="cc-q${n}" class="cc-q" type="number" min="0" step="any" inputmode="decimal" value="${esc(it.cantidad != null ? Math.round(it.cantidad * 1e3) / 1e3 : "")}"></label><button type="button" class="btn sm cc-x" aria-label="Quitar" style="margin-bottom:22px">×</button>`;
+        d.innerHTML = `<label class="f" for="cc-i${n}">Insumo<select id="cc-i${n}" class="cc-i">${insOpts(it.insumoId)}</select><span class="h cc-s"></span></label><label class="f" for="cc-q${n}"><span>Cantidad (<span class="cc-u"></span>)</span><input id="cc-q${n}" class="cc-q" type="number" min="0" step="any" inputmode="decimal" value="${esc(it.cantidad != null ? Math.round(it.cantidad * 1e3) / 1e3 : "")}"></label><button type="button" class="btn sm cc-x" aria-label="Quitar" style="margin-bottom:22px">×</button>`;
         box.appendChild(d);
         d.querySelector(".cc-i").addEventListener("change", tot);
         d.querySelector(".cc-q").addEventListener("input", tot);
@@ -1771,7 +1783,7 @@ details.cl summary::-webkit-details-marker{display:none}
       tot();
       submitOnce($("#f"), () => {
         const rs = reut(), nd = noDesc();
-        const items = [...box.querySelectorAll(".cc-row")].map((d) => ({ insumoId: d.querySelector(".cc-i").value, cantidad: Math.round((+d.querySelector(".cc-q").value || 0) * 1e3) / 1e3 })).filter((x) => x.cantidad > 0 && !(nd && esLev(x.insumoId)));
+        const items = [...box.querySelectorAll(".cc-row")].map((d) => ({ insumoId: d.querySelector(".cc-i").value, cantidad: Math.round((+d.querySelector(".cc-q").value || 0) * 1e3) / 1e3 })).filter((x) => x.cantidad > 0 && x.insumoId && !(nd && esLev(x.insumoId)));
         if (rs && !val("cc-dt")) {
           toast("Elegí de qué tanda viene la levadura.");
           return false;
