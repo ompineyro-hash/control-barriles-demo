@@ -4420,20 +4420,23 @@ var NOV=[
 ];
 var K='cb-nov-visto',visto='';try{visto=localStorage.getItem(K)||'';}catch(e){}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function nuevas(){return NOV.filter(function(n){return n.id>visto;});}
+function marcar(){visto=NOV[0].id;try{localStorage.setItem(K,visto);}catch(e){}pinta();}
+function bloque(L,marca){return L.map(function(n){var nv=marca&&n.id>visto;return '<div style="'+(nv?'border-left:4px solid var(--ok);padding-left:10px':'')+'"><div class="muted small" style="font-weight:600">'+esc(n.f)+(nv?' <span class="chip plain" style="--c:var(--ok)">Nuevo</span>':'')+'</div><ul class="small" style="margin:4px 0 0;padding-left:18px">'+n.t.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';}).join('');}
+var btn=document.createElement('button');btn.type='button';btn.className='btn sm';btn.id='nov-btn';btn.style.marginLeft='auto';
+var brand=document.querySelector('.brand');if(brand)brand.appendChild(btn);
+btn.onclick=function(){var t=document.getElementById('sheet-t'),b=document.getElementById('sheet-b'),sh=document.getElementById('sheet');if(!t||!b||!sh)return;
+  t.textContent='Novedades';b.innerHTML='<div class="stack">'+bloque(NOV,true)+'<p class="h" style="margin:0">Cada vez que subo una mejora aparece acá, con su fecha.</p></div>';sh.hidden=false;marcar();};
 var box=document.createElement('div');box.id='novedades';box.className='wrap';box.style.paddingBottom='0';
 var main=document.getElementById('main');if(!main)return;main.parentNode.insertBefore(box,main);
-function pinta(todo){
-  var L=todo?NOV:NOV.filter(function(n){return n.id>visto;});if(!visto&&!todo)L=NOV.slice(0,1);
-  if(!L.length){box.innerHTML='<div style="margin-top:10px;text-align:right"><button type="button" class="btn sm" id="nov-ver">Ver novedades</button></div>';}
-  else box.innerHTML='<div class="panel card" style="margin-top:14px;border-color:var(--ok);border-width:2px"><div class="row between"><strong>'+(todo?'Todas las novedades':'Novedades desde tu última visita')+'</strong><span class="chip plain" style="--c:var(--ok)">Nuevo</span></div>'+
-    L.map(function(n){return '<div><div class="muted small" style="font-weight:600">'+esc(n.f)+'</div><ul class="small" style="margin:4px 0 0;padding-left:18px">'+n.t.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';}).join('')+
-    '<div class="row" style="gap:6px"><button type="button" class="btn sm pri" id="nov-ok">Entendido</button>'+(todo?'':'<button type="button" class="btn sm" id="nov-todo">Ver todas</button>')+'</div></div>';
-  var ok=document.getElementById('nov-ok'),td=document.getElementById('nov-todo'),vr=document.getElementById('nov-ver');
-  if(ok)ok.onclick=function(){visto=NOV[0].id;try{localStorage.setItem(K,visto);}catch(e){}pinta(false);};
-  if(td)td.onclick=function(){pinta(true);};
-  if(vr)vr.onclick=function(){pinta(true);};
+function pinta(){
+  var L=nuevas();if(!visto)L=NOV.slice(0,1);
+  btn.innerHTML='Novedades'+(L.length&&visto!==NOV[0].id?' <span class="chip plain" style="--c:var(--ok);padding:0 7px">'+L.length+'</span>':'');
+  if(!L.length||visto===NOV[0].id){box.innerHTML='';return;}
+  box.innerHTML='<div class="panel card" style="margin-top:14px;border-color:var(--ok);border-width:2px"><div class="row between"><strong>Novedades desde tu última visita</strong><span class="chip plain" style="--c:var(--ok)">Nuevo</span></div>'+bloque(L,false)+'<div class="row" style="gap:6px"><button type="button" class="btn sm pri" id="nov-ok">Entendido</button><span class="small muted">Después las ves cuando quieras con el botón <strong>Novedades</strong> de arriba.</span></div></div>';
+  document.getElementById('nov-ok').onclick=marcar;
 }
-pinta(false);
+pinta();
 function enResumen(){var b=document.querySelector('#tabs button[aria-current="page"]');box.hidden=!!(b&&b.dataset.tab!=='resumen');}
 var tb=document.getElementById('tabs');if(tb&&window.MutationObserver){new MutationObserver(enResumen).observe(tb,{childList:true,subtree:true,attributes:true});enResumen();}
 })();
