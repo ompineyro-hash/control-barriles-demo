@@ -7,6 +7,10 @@
 </head>
 <body>
 <script>
+/* Tema elegido por cada uno: oscuro por defecto */
+(function(){var t='oscuro';try{t=localStorage.getItem('cb-tema')||'oscuro';}catch(e){}document.documentElement.setAttribute('data-theme',t==='claro'?'light':'dark');})();
+</script>
+<script>
 /* Avisos para navegadores viejos */
 if(!Object.fromEntries)Object.fromEntries=function(it){var o={};Array.from(it).forEach(function(p){o[p[0]]=p[1];});return o;};
 if(!Array.prototype.flatMap)Array.prototype.flatMap=function(f,t){return this.reduce(function(a,x,i,arr){return a.concat(f.call(t,x,i,arr));},[]);};
@@ -28,16 +32,16 @@ window.onerror=function(msg){if(window.__cbErr)return;window.__cbErr=1;var d=doc
   --r:8px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#11171A; --surface:#1A2226; --surface-2:#151C20; --ink:#E5EBEE; --muted:#95A3AA; --line:#2B363B;
-  --accent:#E39C3C; --accent-ink:#1A1206;
-  --st-limpio:#4BB3C4; --st-lleno:#E39C3C; --st-cliente:#9C8BE0; --st-sucio:#B89C80; --st-baja:#78848A;
-  --warn:#EE7358; --soon:#E0B84A; --ok:#5BBE84; color-scheme:dark;
+  --bg:#0C0F11; --surface:#161B1E; --surface-2:#111518; --ink:#F1F4F5; --muted:#9BA6AC; --line:#262E33;
+  --accent:#F4B731; --accent-ink:#1A1206;
+  --st-limpio:#4CC9E0; --st-lleno:#F4B731; --st-cliente:#A98BFF; --st-sucio:#D3A57A; --st-baja:#7E8A90;
+  --warn:#FF6B57; --soon:#F5C94E; --ok:#3DDC84; color-scheme:dark;
 }}
 :root[data-theme="dark"]{
-  --bg:#11171A; --surface:#1A2226; --surface-2:#151C20; --ink:#E5EBEE; --muted:#95A3AA; --line:#2B363B;
-  --accent:#E39C3C; --accent-ink:#1A1206;
-  --st-limpio:#4BB3C4; --st-lleno:#E39C3C; --st-cliente:#9C8BE0; --st-sucio:#B89C80; --st-baja:#78848A;
-  --warn:#EE7358; --soon:#E0B84A; --ok:#5BBE84; color-scheme:dark;
+  --bg:#0C0F11; --surface:#161B1E; --surface-2:#111518; --ink:#F1F4F5; --muted:#9BA6AC; --line:#262E33;
+  --accent:#F4B731; --accent-ink:#1A1206;
+  --st-limpio:#4CC9E0; --st-lleno:#F4B731; --st-cliente:#A98BFF; --st-sucio:#D3A57A; --st-baja:#7E8A90;
+  --warn:#FF6B57; --soon:#F5C94E; --ok:#3DDC84; color-scheme:dark;
 }
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
@@ -613,16 +617,16 @@ window.__cbSeed = function() {
   } catch (e) {
   }
   const EST = {
-    limpio: { l: "Limpio", c: "var(--st-limpio)" },
-    lleno: { l: "Lleno", c: "var(--st-lleno)" },
-    cliente: { l: "En cliente", c: "var(--st-cliente)" },
-    sucio: { l: "Para lavar", c: "var(--st-sucio)" },
-    baja: { l: "Fuera de servicio", c: "var(--st-baja)" }
+    limpio: { l: "✨ Limpio", c: "var(--st-limpio)" },
+    lleno: { l: "🍺 Lleno", c: "var(--st-lleno)" },
+    cliente: { l: "🚚 En cliente", c: "var(--st-cliente)" },
+    sucio: { l: "🧽 Para lavar", c: "var(--st-sucio)" },
+    baja: { l: "🚫 Fuera de servicio", c: "var(--st-baja)" }
   };
   const ORDEN = ["limpio", "lleno", "cliente", "sucio", "baja"];
   const ACC = { sucio: [["lavar", "Marcar lavado"]], limpio: [["llenar", "Llenar"]], lleno: [["enviar", "Enviar a cliente"], ["asignar", "Asignar cerveza"]], cliente: [["recibir", "Recibir"]], baja: [] };
   const ACC_TXT = { crear: "Alta", lavar: "Lavado", llenar: "Llenado", enviar: "Enviado", recibir: "Recibido", corregir: "Estado corregido", asignar: "Cerveza asignada", anular: "Movimiento deshecho", problema: "Problema reportado", resuelto: "Problema resuelto" };
-  const TABS = [["fermentadores", "Fermentadores"], ["recetas", "Recetas"], ["retornables", "Retornables"], ["stock", "Stock"], ["insumos", "Insumos"], ["clientes", "Clientes"], ["resumen", "Resumen"], ["ajustes", "Ajustes"]];
+  const TABS = [["fermentadores", "🧪 Fermentadores"], ["recetas", "📖 Recetas"], ["retornables", "🛢️ Retornables"], ["stock", "📦 Stock"], ["insumos", "🧺 Insumos"], ["clientes", "🤝 Clientes"], ["resumen", "📊 Resumen"], ["ajustes", "⚙️ Ajustes"]];
   const HMAX = 120;
   const MOTIVOS = ["Contaminación / infección", "Oxidación o sabor defectuoso", "Rotura, pérdida o derrame", "Vencida", "Error de proceso", "Otro"];
   const fmt$ = (n) => "$ " + Math.round(Number(n) || 0).toLocaleString("es-AR");
@@ -890,7 +894,7 @@ window.__cbSeed = function() {
     }
     const deu = S.clientes.map((c) => ({ c, x: cuentaDe(c.id) })).filter((o) => o.x.saldo > 0.5).sort((a, b) => b.x.saldo - a.x.saldo);
     if (deu.length) {
-      h += `<div class="row between" style="margin:26px 0 10px"><h2 class="sec" style="margin:0">A cobrar</h2><span class="chip plain" style="--c:var(--warn)">${fmt$(deu.reduce((s, o) => s + o.x.saldo, 0))}</span></div><div class="panel tbl"><table><tbody>${deu.map((o) => `<tr><td><strong>${esc(o.c.nombre)}</strong></td><td class="small">${o.x.vencidaDias ? `<span class="chip plain" style="--c:var(--warn)">Vencida ${o.x.vencidaDias} d</span>` : o.x.plazoPago ? `<span class="muted">vence el ${fmtF(o.x.vence)}</span>` : `<span class="muted">desde ${fmtF(o.x.desde)}</span>`}</td><td class="r num"><strong>${fmt$(o.x.saldo)}</strong></td><td class="r">${S.canWrite ? `<button class="btn sm" data-act="registrar-pago" data-id="${o.c.id}">Registrar pago</button>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
+      h += `<div class="row between" style="margin:26px 0 10px"><h2 class="sec" style="margin:0">💰 A cobrar</h2><span class="chip plain" style="--c:var(--warn)">${fmt$(deu.reduce((s, o) => s + o.x.saldo, 0))}</span></div><div class="panel tbl"><table><tbody>${deu.map((o) => `<tr><td><strong>${esc(o.c.nombre)}</strong></td><td class="small">${o.x.vencidaDias ? `<span class="chip plain" style="--c:var(--warn)">Vencida ${o.x.vencidaDias} d</span>` : o.x.plazoPago ? `<span class="muted">vence el ${fmtF(o.x.vence)}</span>` : `<span class="muted">desde ${fmtF(o.x.desde)}</span>`}</td><td class="r num"><strong>${fmt$(o.x.saldo)}</strong></td><td class="r">${S.canWrite ? `<button class="btn sm" data-act="registrar-pago" data-id="${o.c.id}">Registrar pago</button>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
     }
     h += vPerdidas(30);
     return h;
@@ -1204,6 +1208,7 @@ window.__cbSeed = function() {
       return `<label class="f" for="pr-${c.id}">${esc(c.nombre)}<input id="pr-${c.id}" data-cer="${c.id}" type="number" min="0" step="any" value="${esc((_a2 = c.precioLata) != null ? _a2 : "")}" placeholder="Usa el general" inputmode="decimal" ${S.canWrite ? "" : "disabled"}></label>`;
     }).join("")}</div>` : ""}
     ${S.canWrite ? `<div><button class="btn" data-act="guardar-precios">Guardar precios</button></div>` : ""}</div>`;
+    h += `<h2 class="sec">Apariencia</h2><div class="panel card"><label class="f" for="tema-u">Cómo se ve la app<span class="h">Se guarda en este aparato: cada uno elige el suyo.</span><select id="tema-u" style="max-width:320px"><option value="oscuro" ${document.documentElement.getAttribute("data-theme") !== "light" ? "selected" : ""}>🌙 Oscuro</option><option value="claro" ${document.documentElement.getAttribute("data-theme") === "light" ? "selected" : ""}>☀️ Claro</option></select></label></div>`;
     h += `<h2 class="sec">Densidad</h2><div class="panel card"><label class="f" for="den-u">Cómo medís la densidad<span class="h">Se usa en recetas y mediciones. Si la cambiás, los valores cargados se muestran convertidos.</span><select id="den-u" style="max-width:320px" ${S.canWrite ? "" : "disabled"}><option value="sg" ${enPlato() ? "" : "selected"}>Densidad específica (1.050)</option><option value="plato" ${enPlato() ? "selected" : ""}>Grados Plato (12,4 °P)</option></select></label></div>`;
     h += `<h2 class="sec">Costo de la cerveza</h2><div class="panel card"><label class="f" for="costo-l">Costo de producción por litro ($)
   <span class="h">Opcional. Se usa para calcular cuánta plata representa cada pérdida. Queda guardado con cada pérdida, así si cambia el costo no se alteran las anteriores.</span></label>
@@ -1272,6 +1277,8 @@ window.__cbSeed = function() {
       if (ok === false && b) b.disabled = false;
     });
   }
+const CATEMO = { Malta: "🌾", "Lúpulo": "🌿", Levadura: "🧫", Adjunto: "🍯", "Envase vacío": "🥫", Limpieza: "🧴", Gas: "💨", Otro: "📦" };
+  const catTxt = (c) => (CATEMO[c || "Otro"] || "📦") + " " + (c || "Otro");
   const CATS = ["Malta", "Lúpulo", "Levadura", "Adjunto", "Envase vacío", "Limpieza", "Gas", "Otro"];
   const UNIS = [["kg", "kg"], ["g", "g"], ["L", "L"], ["ml", "ml"], ["u", "unidad"]];
   const uTxt = (u) => u === "u" ? "unid." : (UNIS.find((x) => x[0] === u) || [0, u || ""])[1];
@@ -1328,7 +1335,7 @@ window.__cbSeed = function() {
     const tot = L.reduce((s, i) => s + R[i.id].valor, 0);
     h += `<div class="panel tbl"><table><thead><tr><th>Insumo</th><th class="r">Stock</th><th class="r">Mínimo</th><th class="r">Costo prom.</th><th class="r">Valor</th></tr></thead><tbody>` + L.map((i) => {
       const r = R[i.id], u = uTxt(i.unidad), b = bajoMin(i, r);
-      return `<tr class="item" style="display:table-row" data-act="ver-insumo" data-id="${i.id}"><td><strong>${esc(i.nombre)}</strong><div class="muted small">${esc(i.categoria || "Otro")}</div></td><td class="r num" style="white-space:nowrap">${b ? '<span class="chip plain" style="--c:var(--warn)">Bajo</span> ' : ""}<strong>${fmtN(r.stock)}</strong> ${esc(u)}</td><td class="r num muted">${Number(i.minimo) > 0 ? fmtN(i.minimo) + " " + esc(u) : "—"}</td><td class="r num" style="white-space:nowrap">${r.avg ? fmtP(r.avg) + " / " + esc(u) : "—"}</td><td class="r num">${r.valor ? fmt$(r.valor) : "—"}</td></tr>`;
+      return `<tr class="item" style="display:table-row" data-act="ver-insumo" data-id="${i.id}"><td><strong>${esc(i.nombre)}</strong><div class="muted small">${esc(catTxt(i.categoria))}</div></td><td class="r num" style="white-space:nowrap">${b ? '<span class="chip plain" style="--c:var(--warn)">Bajo</span> ' : ""}<strong>${fmtN(r.stock)}</strong> ${esc(u)}</td><td class="r num muted">${Number(i.minimo) > 0 ? fmtN(i.minimo) + " " + esc(u) : "—"}</td><td class="r num" style="white-space:nowrap">${r.avg ? fmtP(r.avg) + " / " + esc(u) : "—"}</td><td class="r num">${r.valor ? fmt$(r.valor) : "—"}</td></tr>`;
     }).join("") + `</tbody><tfoot><tr><td colspan="4" class="r muted small">Valor del stock${L.length < S.insumos.length ? " (filtrado)" : ""}</td><td class="r num"><strong>${fmt$(tot)}</strong></td></tr></tfoot></table></div>`;
     const C = porFecha(S.compras).slice(0, 15);
     h += `<h2 class="sec">Compras</h2>`;
@@ -1651,11 +1658,11 @@ window.__cbSeed = function() {
   }
   const CATCOL={'Malta':'var(--st-lleno)','Lúpulo':'var(--ok)','Levadura':'var(--st-cliente)','Adjunto':'var(--st-sucio)','Envase vacío':'var(--st-limpio)','Limpieza':'var(--soon)','Gas':'var(--st-baja)','Otro':'var(--muted)'};
 function insOpts(sel){const g={};S.insumos.forEach(i=>{const c=CATS.indexOf(i.categoria)>=0?i.categoria:'Otro';(g[c]=g[c]||[]).push(i);});
-  return '<option value="">— Elegí un insumo —</option>'+CATS.filter(c=>g[c]).map(c=>`<optgroup label="${esc(c)}">`+byName(g[c]).map(i=>`<option value="${i.id}" ${i.id===sel?'selected':''}>${esc(i.nombre)}</option>`).join('')+'</optgroup>').join('');}
+  return '<option value="">— Elegí un insumo —</option>'+CATS.filter(c=>g[c]).map(c=>`<optgroup label="${esc(catTxt(c))}">`+byName(g[c]).map(i=>`<option value="${i.id}" ${i.id===sel?'selected':''}>${esc(i.nombre)}</option>`).join('')+'</optgroup>').join('');}
 function pintaIns(row,selCls){const s=row.querySelector(selCls);if(!s)return;const i=S.insumos.find(z=>z.id===s.value);const c=i?(CATCOL[i.categoria]||'var(--muted)'):'var(--line)';
   row.style.borderLeft='6px solid '+c;row.style.paddingLeft='10px';row.style.borderRadius='6px';
   let t=row.querySelector('.ins-cat');if(!t){t=document.createElement('span');t.className='chip plain ins-cat';t.style.justifySelf='start';s.parentNode.insertBefore(t,s);}
-  t.style.setProperty('--c',c);t.textContent=i?i.categoria||'Otro':'Sin elegir';}
+  t.style.setProperty('--c',c);t.textContent=i?catTxt(i.categoria):'Sin elegir';}
 function nuevoInsumoInline(row,selCls,after){
   const s0=row.querySelector(selCls);if(s0){s0.addEventListener('change',()=>pintaIns(row,selCls));pintaIns(row,selCls);}
   if(!S.canWrite)return;
@@ -3472,7 +3479,7 @@ function nuevoInsumoInline(row,selCls,after){
     const IR = mod("insumos") && S.insumos.length ? insCalc() : null, ib = IR ? S.insumos.filter((i) => bajoMin(i, IR[i.id])) : [];
     if (!pb.length && !rt.length && !dv.length && !ib.length && !ev.length) return "";
     return `<div class="panel" style="margin-top:14px;border-color:var(--warn);background:var(--surface);background:color-mix(in srgb,var(--warn) 8%,var(--surface));padding:10px 14px;display:grid;gap:6px">
-    <strong style="color:var(--warn)">Atención</strong>
+    <strong style="color:var(--warn)">⚠️ Atención</strong>
     ${ev.map((t) => `<div class="row between" style="gap:6px"><span class="small"><strong>${esc(t.codigo)} · ${esc(capi(t.estilo))}</strong> en evaluación: ${esc(t.incid.que)} (${esc(etapaTxt(t.incid.etapa).toLowerCase())})</span>${S.canWrite ? `<button class="btn sm" data-act="incid" data-id="${t.id}">Decidir</button>` : ""}</div>`).join("")}
     ${rt.map((t) => {
       var _a;
@@ -4410,6 +4417,15 @@ function nuevoInsumoInline(row,selCls,after){
       S.f.tipo = ev.target.value;
       render();
     }
+    if (ev.target.id === "tema-u") {
+      const v = ev.target.value;
+      try {
+        localStorage.setItem("cb-tema", v);
+      } catch (e) {
+      }
+      document.documentElement.setAttribute("data-theme", v === "claro" ? "light" : "dark");
+      toast(v === "claro" ? "Modo claro" : "Modo oscuro");
+    }
     if (ev.target.id === "den-u") {
       const v = ev.target.value;
       W(async () => {
@@ -4519,6 +4535,7 @@ function nuevoInsumoInline(row,selCls,after){
 /* Novedades para testers */
 (function(){
 var NOV=[
+ {id:'2026-11-18c',f:'18 nov',t:['Nueva apariencia: modo oscuro con colores más vivos. Si preferís el claro, cambialo en Ajustes → Apariencia (cada uno elige el suyo).','Íconos en las pestañas, en los estados de los barriles y en las categorías de insumos, para ubicarse más rápido.']},
  {id:'2026-11-18b',f:'18 nov',t:['Problemas de producción: en cada fermentador, "Problema / pérdida". Se anota en qué etapa pasó y qué pasó.','Mientras se evalúa, la tanda queda marcada y no se puede envasar.','Después se decide: se rescata (con cambio de estilo o de litros), se tira una parte o se tira todo. La pérdida queda con su costo real según los insumos.']},
  {id:'2026-11-18',f:'18 nov',t:['Dos o más cocciones al mismo fermentador: en la tarjeta del fermentador tocá "+ Otra cocción". Cada una descuenta sus insumos y suma su mosto a la misma tanda.','En la segunda cocción la levadura puede quedar como "Ya está en el fermentador", así no se descuenta dos veces.','Una cocción agregada por error se puede quitar, y el stock vuelve.']},
  {id:'2026-11-02c',f:'2 nov',t:['Recetas: el alcohol (ABV) se ve en su propio recuadro y se calcula solo al poner la densidad inicial y final.','La densidad se puede escribir 1.010, 1,010 o 1010: las tres valen.']},
