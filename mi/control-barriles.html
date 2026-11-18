@@ -179,7 +179,7 @@ details.cl summary::-webkit-details-marker{display:none}
 <header class="top">
   <div id="modo" class="modo" hidden></div>
   <div class="top-in">
-    <div class="brand"><h1>Control de Barriles</h1><span class="sub" id="who"></span></div>
+    <div class="brand"><h1>Control de Barriles</h1><span class="sub" id="who"></span><button type="button" class="btn sm" id="tema-btn" style="margin-left:auto" title="Cambiar entre modo oscuro y claro"></button></div>
     <nav class="tabs" id="tabs" aria-label="Secciones"></nav>
   </div>
 </header>
@@ -4324,5 +4324,13 @@ function nuevoInsumoInline(row,selCls,after){
 })();
 </script>
 
+<script>
+/* Botón de tema en el encabezado */
+(function(){var b=document.getElementById('tema-btn');if(!b)return;
+function pinta(){var claro=document.documentElement.getAttribute('data-theme')==='light';b.textContent=claro?'🌙 Oscuro':'☀️ Claro';b.setAttribute('aria-label',claro?'Pasar a modo oscuro':'Pasar a modo claro');var s=document.getElementById('tema-u');if(s)s.value=claro?'claro':'oscuro';}
+b.addEventListener('click',function(){var claro=document.documentElement.getAttribute('data-theme')==='light';var v=claro?'oscuro':'claro';try{localStorage.setItem('cb-tema',v);}catch(e){}document.documentElement.setAttribute('data-theme',v==='claro'?'light':'dark');pinta();});
+document.addEventListener('change',function(ev){if(ev.target&&ev.target.id==='tema-u')setTimeout(pinta,0);});
+pinta();})();
+</script>
 </body>
 </html>

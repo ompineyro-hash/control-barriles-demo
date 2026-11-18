@@ -179,7 +179,7 @@ details.cl summary::-webkit-details-marker{display:none}
 <header class="top">
   <div id="modo" class="modo" hidden></div>
   <div class="top-in">
-    <div class="brand"><h1>Control de Barriles</h1><span class="sub" id="who"></span></div>
+    <div class="brand"><h1>Control de Barriles</h1><span class="sub" id="who"></span><button type="button" class="btn sm" id="tema-btn" style="margin-left:auto" title="Cambiar entre modo oscuro y claro"></button></div>
     <nav class="tabs" id="tabs" aria-label="Secciones"></nav>
   </div>
 </header>
@@ -4535,6 +4535,7 @@ function nuevoInsumoInline(row,selCls,after){
 /* Novedades para testers */
 (function(){
 var NOV=[
+ {id:'2026-11-18d',f:'18 nov',t:['Botón para cambiar entre oscuro y claro arriba a la derecha, al lado de Novedades.']},
  {id:'2026-11-18c',f:'18 nov',t:['Nueva apariencia: modo oscuro con colores más vivos. Si preferís el claro, cambialo en Ajustes → Apariencia (cada uno elige el suyo).','Íconos en las pestañas, en los estados de los barriles y en las categorías de insumos, para ubicarse más rápido.']},
  {id:'2026-11-18b',f:'18 nov',t:['Problemas de producción: en cada fermentador, "Problema / pérdida". Se anota en qué etapa pasó y qué pasó.','Mientras se evalúa, la tanda queda marcada y no se puede envasar.','Después se decide: se rescata (con cambio de estilo o de litros), se tira una parte o se tira todo. La pérdida queda con su costo real según los insumos.']},
  {id:'2026-11-18',f:'18 nov',t:['Dos o más cocciones al mismo fermentador: en la tarjeta del fermentador tocá "+ Otra cocción". Cada una descuenta sus insumos y suma su mosto a la misma tanda.','En la segunda cocción la levadura puede quedar como "Ya está en el fermentador", así no se descuenta dos veces.','Una cocción agregada por error se puede quitar, y el stock vuelve.']},
@@ -4549,8 +4550,8 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;
 function nuevas(){return NOV.filter(function(n){return n.id>visto;});}
 function marcar(){visto=NOV[0].id;try{localStorage.setItem(K,visto);}catch(e){}pinta();}
 function bloque(L,marca){return L.map(function(n){var nv=marca&&n.id>visto;return '<div style="'+(nv?'border-left:4px solid var(--ok);padding-left:10px':'')+'"><div class="muted small" style="font-weight:600">'+esc(n.f)+(nv?' <span class="chip plain" style="--c:var(--ok)">Nuevo</span>':'')+'</div><ul class="small" style="margin:4px 0 0;padding-left:18px">'+n.t.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';}).join('');}
-var btn=document.createElement('button');btn.type='button';btn.className='btn sm';btn.id='nov-btn';btn.style.marginLeft='auto';
-var brand=document.querySelector('.brand');if(brand)brand.appendChild(btn);
+var btn=document.createElement('button');btn.type='button';btn.className='btn sm';btn.id='nov-btn';btn.style.marginLeft='6px';
+var brand=document.querySelector('.brand');var tbn=document.getElementById('tema-btn');if(tbn)tbn.after(btn);else if(brand)brand.appendChild(btn);
 btn.onclick=function(){var t=document.getElementById('sheet-t'),b=document.getElementById('sheet-b'),sh=document.getElementById('sheet');if(!t||!b||!sh)return;
   t.textContent='Novedades';b.innerHTML='<div class="stack">'+bloque(NOV,true)+'<p class="h" style="margin:0">Cada vez que subo una mejora aparece acá, con su fecha.</p></div>';sh.hidden=false;marcar();};
 var box=document.createElement('div');box.id='novedades';box.className='wrap';box.style.paddingBottom='0';
@@ -4566,6 +4567,14 @@ pinta();
 function enResumen(){var b=document.querySelector('#tabs button[aria-current="page"]');box.hidden=!!(b&&b.dataset.tab!=='resumen');}
 var tb=document.getElementById('tabs');if(tb&&window.MutationObserver){new MutationObserver(enResumen).observe(tb,{childList:true,subtree:true,attributes:true});enResumen();}
 })();
+</script>
+<script>
+/* Botón de tema en el encabezado */
+(function(){var b=document.getElementById('tema-btn');if(!b)return;
+function pinta(){var claro=document.documentElement.getAttribute('data-theme')==='light';b.textContent=claro?'🌙 Oscuro':'☀️ Claro';b.setAttribute('aria-label',claro?'Pasar a modo oscuro':'Pasar a modo claro');var s=document.getElementById('tema-u');if(s)s.value=claro?'claro':'oscuro';}
+b.addEventListener('click',function(){var claro=document.documentElement.getAttribute('data-theme')==='light';var v=claro?'oscuro':'claro';try{localStorage.setItem('cb-tema',v);}catch(e){}document.documentElement.setAttribute('data-theme',v==='claro'?'light':'dark');pinta();});
+document.addEventListener('change',function(ev){if(ev.target&&ev.target.id==='tema-u')setTimeout(pinta,0);});
+pinta();})();
 </script>
 </body>
 </html>
