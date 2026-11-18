@@ -1161,9 +1161,9 @@ window.__cbSeed = function() {
     let body;
     if (a) {
       const { t, u } = a, cap = u.cargado || Number(f.rinde) || Number(f.capacidad) || 0, sal = u.saldo == null ? null : Math.max(0, u.saldo), pct = cap && sal != null ? Math.min(100, sal / cap * 100) : 0;
-      body = `<div><strong>${esc(t.estilo || "Sin estilo")}</strong> <span class="muted small mono">${esc(t.codigo)}</span><div class="muted small">Cargado ${fmtF(t.fecha)}</div></div>${mod("insumos") && t.coccion ? coccionTxt(t, insCalc()) : ""}
+      body = `<div><strong>${esc(t.estilo || "Sin estilo")}</strong> <span class="muted small mono">${esc(t.codigo)}</span><div class="muted small">Cargado ${fmtF(t.fecha)}</div></div>${mod("insumos") && cocsDe(t).length ? coccionTxt(t, insCalc()) : ""}
     ${sal != null ? `<div class="row between" style="align-items:baseline"><span class="saldo num">${fmtN(sal)} L</span><span class="muted small num">quedan de ${fmtN(u.cargado)} L</span></div><div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div>${sal > 0.05 && sal < minEnvase() ? `<div class="note">Queda un resto de <strong>${fmtN(sal)} L</strong>, menos que un envase.${S.canWrite ? ` <button class="btn sm" data-act="cerrar-resto" data-id="${t.id}" style="margin-top:6px">Pasar a merma y liberar ${esc(f.nombre)}</button>` : ""}</div>` : sal > 0.05 ? `<div class="small muted">${esc(rindeTxt(sal, D))}</div>` : ""}` : '<div class="small muted">Sin litros cargados</div>'}
-    ${S.canWrite ? `<div class="row" style="gap:6px"><button class="btn pri sm" data-act="envasar" data-id="${t.id}">Envasar</button>${compact ? "" : `<button class="btn sm" data-act="ajustar" data-id="${t.id}">Ajustar litros</button><button class="btn sm" data-act="vaciar" data-id="${t.id}">Vaciar y limpiar</button><button class="btn sm" data-act="perdida-ferm" data-id="${t.id}" style="color:var(--warn)">Registrar pérdida</button><button class="btn sm" data-act="editar-tanda" data-id="${t.id}">Editar</button>`}${mod("insumos") ? `<button class="btn sm" data-act="coccion" data-id="${t.id}">${t.coccion ? "Corregir cocción" : "Cargar cocción"}</button>` : ""}</div>` : ""}`;
+    ${S.canWrite ? `<div class="row" style="gap:6px"><button class="btn pri sm" data-act="envasar" data-id="${t.id}">Envasar</button>${compact ? "" : `<button class="btn sm" data-act="ajustar" data-id="${t.id}">Ajustar litros</button><button class="btn sm" data-act="vaciar" data-id="${t.id}">Vaciar y limpiar</button><button class="btn sm" data-act="perdida-ferm" data-id="${t.id}" style="color:var(--warn)">Registrar pérdida</button><button class="btn sm" data-act="editar-tanda" data-id="${t.id}">Editar</button>`}${mod("insumos") ? cocBtns(t) : ""}</div>` : ""}`;
     } else {
       body = `<div><span class="chip" style="--c:var(--st-limpio)">Disponible</span></div>${f.rinde ? `<div class="small muted">Con ${fmtN(f.rinde)} L: ${esc(rindeTxt(f.rinde, D).replace("Alcanza para", "rinde"))}</div>` : ""}${S.canWrite ? `<div><button class="btn sm pri" data-act="nueva-tanda" data-id="${f.id}">Cargar cerveza</button></div>` : ""}`;
     }
@@ -1171,7 +1171,7 @@ window.__cbSeed = function() {
   }
   function tandaRow(t, D) {
     const u = tandaUso(t, D), f = D.F[t.fermentadorId];
-    return `<tr><td class="num" style="white-space:nowrap">${fmtF(t.fecha)}</td><td><strong>${esc(t.estilo || "—")}</strong> <span class="muted small mono">${esc(t.codigo)}</span> ${t.cerrada || u.saldo != null && u.saldo <= 0.05 ? '<span class="chip plain" style="--c:var(--muted)">Terminada</span>' : '<span class="chip plain" style="--c:var(--st-lleno)">En fermentador</span>'}<div class="muted small">${esc((f == null ? void 0 : f.nombre) || t.fermentador || "")}</div>${mod("insumos") && t.coccion ? coccionTxt(t, insCalc()) : ""}</td>
+    return `<tr><td class="num" style="white-space:nowrap">${fmtF(t.fecha)}</td><td><strong>${esc(t.estilo || "—")}</strong> <span class="muted small mono">${esc(t.codigo)}</span> ${t.cerrada || u.saldo != null && u.saldo <= 0.05 ? '<span class="chip plain" style="--c:var(--muted)">Terminada</span>' : '<span class="chip plain" style="--c:var(--st-lleno)">En fermentador</span>'}<div class="muted small">${esc((f == null ? void 0 : f.nombre) || t.fermentador || "")}</div>${mod("insumos") && cocsDe(t).length ? coccionTxt(t, insCalc()) : ""}</td>
   <td class="small">${Object.keys(u.parts).length ? Object.entries(u.parts).map(([k, n]) => `${fmtN(n)} × ${esc(k)}`).join("<br>") : '<span class="muted">Sin envasar</span>'}</td>
   <td class="r num" style="white-space:nowrap">${fmtN(u.total)} L${u.cargado != null ? `<div class="muted small">de ${fmtN(u.cargado)} L${t.mosto ? ` (mosto ${fmtN(t.mosto)})` : ""}${u.aj ? ` · ${u.aj < 0 ? "merma " + fmtN(-u.aj) : "ajuste +" + fmtN(u.aj)} L` : ""}</div>` : ""}</td>
   <td class="r" style="white-space:nowrap"><button class="btn sm" data-act="traza" data-id="${t.id}">Trazabilidad</button> ${S.canWrite ? `<button class="btn sm" data-act="editar-tanda" data-id="${t.id}">Editar</button>` : ""}${S.canWrite && mod("insumos") ? ` <button class="btn sm" data-act="coccion" data-id="${t.id}">Cocción</button>` : ""}${t.retenida ? '<div><span class="chip plain" style="--c:var(--warn)">Retenido</span></div>' : ""}</td></tr>`;
@@ -1844,176 +1844,231 @@ function nuevoInsumoInline(row,selCls,after){
     var _a;
     return ((_a = S.insumos.find((i) => i.id === id)) == null ? void 0 : _a.categoria) === "Levadura";
   };
+  function cocsDe(t) {
+    var L = [];
+    if (t && t.coccion) L.push(Object.assign({}, t.coccion, { n: 1 }));
+    ((t && t.cocExtra) || []).forEach(function (c, i) { L.push(Object.assign({}, c, { n: i + 2 })); });
+    return L;
+  }
   function coccionCosto(t, R) {
-    const c = t.coccion;
-    if (!c) return null;
-    let tot = 0, falta = false;
-    (c.items || []).forEach((it) => {
-      if (it.costo != null) tot += Number(it.costo);
-      else {
-        const x = R[it.insumoId];
-        if (x && x.avg) tot += Number(it.cantidad) * x.avg;
-        else falta = true;
-      }
+    var L = cocsDe(t);
+    if (!L.length) return null;
+    var tot = 0, falta = false;
+    L.forEach(function (c) {
+      (c.items || []).forEach(function (it) {
+        if (it.costo != null) tot += Number(it.costo);
+        else {
+          var x = R[it.insumoId];
+          if (x && x.avg) tot += Number(it.cantidad) * x.avg;
+          else falta = true;
+        }
+      });
     });
-    return { tot, falta, porL: t.litros ? tot / Number(t.litros) : 0 };
+    return { tot: tot, falta: falta, porL: t.litros ? tot / Number(t.litros) : 0 };
   }
   function coccionTxt(t, R) {
-    var _a;
-    const c = t.coccion;
-    if (!c) return "";
-    const k = coccionCosto(t, R), T = by(S.tandas);
-    return `<div class="small"><span class="chip plain" style="--c:var(--soon)">Cocción provisoria</span> ${c.recetaNombre ? esc(c.recetaNombre) + " · " : ""}${k.tot ? `insumos ${fmt$(k.tot)}${k.porL ? " · " + fmtP(k.porL) + "/L" : ""}` : ""}${c.levadura && c.levadura.tipo === "reutilizada" ? `<div class="muted">Levadura reutilizada de ${esc(((_a = T[c.levadura.deTandaId]) == null ? void 0 : _a.codigo) || "otra tanda")} · generación ${fmtN(c.levadura.gen || 2)}${c.levadura.refuerzo ? " · con refuerzo de levadura nueva" : ""}</div>` : ""}${c.ogReal ? `<div class="muted">Densidad inicial ${denTxt(c.ogReal)}${c.ogObj ? ` · objetivo ${denTxt(c.ogObj)}${Math.abs(c.ogReal - c.ogObj) >= 15e-4 ? ` <span style="color:var(--warn)">(${c.ogReal < c.ogObj ? "abajo" : "arriba"})</span>` : ""}` : ""}</div>` : ""}</div>`;
+    var L = cocsDe(t);
+    if (!L.length) return "";
+    var c = L[0], k = coccionCosto(t, R), T = by(S.tandas);
+    var lev = c.levadura && c.levadura.tipo === "reutilizada" ? '<div class="muted">Levadura reutilizada de ' + esc((T[c.levadura.deTandaId] && T[c.levadura.deTandaId].codigo) || "otra tanda") + " · generación " + fmtN(c.levadura.gen || 2) + (c.levadura.refuerzo ? " · con refuerzo de levadura nueva" : "") + "</div>" : "";
+    var dens = L.filter(function (x) { return x.ogReal; }).map(function (x) {
+      return '<div class="muted">' + (L.length > 1 ? "Cocción " + x.n + ": " : "") + "densidad inicial " + denTxt(x.ogReal) + (x.ogObj ? " · objetivo " + denTxt(x.ogObj) + (Math.abs(x.ogReal - x.ogObj) >= 15e-4 ? ' <span style="color:var(--warn)">(' + (x.ogReal < x.ogObj ? "abajo" : "arriba") + ")</span>" : "") : "") + (L.length > 1 && x.base ? " · " + fmtN(x.base) + " L" : "") + "</div>";
+    }).join("");
+    return '<div class="small"><span class="chip plain" style="--c:var(--soon)">' + (L.length > 1 ? L.length + " cocciones · provisorio" : "Cocción provisoria") + "</span> " + (c.recetaNombre ? esc(c.recetaNombre) + " · " : "") + (k.tot ? "insumos " + fmt$(k.tot) + (k.porL ? " · " + fmtP(k.porL) + "/L" : "") : "") + lev + dens + "</div>";
   }
-  function sheetCoccion(id, intento) {
-    var _a, _b, _c;
-    const t = S.tandas.find((z) => z.id === id);
+  function cocBtns(t) {
+    var n = cocsDe(t).length;
+    if (!n) return '<button class="btn sm" data-act="coccion" data-id="' + t.id + '">Cargar cocción</button>';
+    return '<button class="btn sm" data-act="coccion" data-id="' + t.id + '">' + (n > 1 ? "Cocciones (" + n + ")" : "Corregir cocción") + '</button><button class="btn sm" data-act="coccion-mas" data-id="' + t.id + '">+ Otra cocción</button>';
+  }
+  function abrirCoccion(id) {
+    var t = S.tandas.find(function (z) { return z.id === id; });
+    var L = cocsDe(t);
+    if (L.length > 1) sheetCocciones(id); else sheetCoccion(id, 0, 1);
+  }
+  function sheetCocciones(id) {
+    var t = S.tandas.find(function (z) { return z.id === id; });
+    if (!t) return;
+    var L = cocsDe(t), R = insCalc(), k = coccionCosto(t, R);
+    var tot = L.reduce(function (s, c) { return s + (Number(c.base) || 0); }, 0);
+    openSheet("Cocciones · " + t.codigo, '<div class="stack"><p class="small muted" style="margin:0">Todas van al mismo fermentador y forman una sola tanda. Mosto total: <strong>' + fmtN(tot) + " L</strong>" + (k && k.tot ? " · insumos " + fmt$(k.tot) : "") + '.</p><div class="panel list">' +
+      L.map(function (c) {
+        var cs = (c.items || []).reduce(function (s, it) { return s + (Number(it.costo) || 0); }, 0);
+        return '<div class="item" style="grid-template-columns:1fr auto" data-act="coccion-n" data-id="' + id + '" data-n="' + c.n + '"><div class="main"><strong>Cocción ' + c.n + "</strong> " + (c.recetaNombre ? esc(c.recetaNombre) : "Sin receta") + '<div class="meta">' + (c.base ? fmtN(c.base) + " L de mosto" : "Sin litros") + (c.ogReal ? " · DI " + denTxt(c.ogReal) : "") + (cs ? " · " + fmt$(cs) : "") + '</div></div><span class="btn sm">Corregir</span></div>';
+      }).join("") + "</div>" + (S.canWrite ? '<div><button class="btn pri" data-act="coccion-mas" data-id="' + id + '">+ Otra cocción al mismo fermentador</button></div>' : "") + "</div>");
+  }
+  function sheetCoccion(id, intento, n) {
+    var t = S.tandas.find(function (z) { return z.id === id; });
     if (!t) {
-      if (!intento) setTimeout(() => sheetCoccion(id, 1), 400);
+      if (!intento) setTimeout(function () { sheetCoccion(id, 1, n); }, 400);
       return;
     }
-    const c = t.coccion || {}, R = insCalc();
-    const rec0 = S.recetas.find((r) => r.id === (c.recetaId || t.recetaId));
-    const recs = S.recetas.filter((r) => !r.archivada || r.id === (rec0 == null ? void 0 : rec0.id)).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), "es"));
-    const prev = porFecha(S.tandas.filter((x) => x.id !== id && String(x.fecha) <= String(t.fecha)));
-    const ins = byName(S.insumos);
-    const lv = c.levadura || { tipo: "nueva" };
-    openSheet("Cocción · " + t.codigo, `<form class="stack" id="f">
-    <div class="note"><strong>Todo esto es provisorio.</strong> Si en la cocción pasó algo distinto, o te das cuenta después, volvé y corregilo: el stock de insumos se acomoda solo y queda la marca de que se corrigió.</div>
-    <div class="grid2"><label class="f" for="cc-r">Receta<select id="cc-r"><option value="">Sin receta</option>${opts(recs, rec0 == null ? void 0 : rec0.id, (r) => r.nombre + " · para " + fmtN(r.litros) + " L")}</select></label>
-    <label class="f" for="cc-b">Litros de mosto que salieron de la cocción<input id="cc-b" type="number" min="0" step="any" inputmode="decimal" value="${esc((_b = (_a = c.base) != null ? _a : t.mosto) != null ? _b : "")}"><span class="h">Lo que entró al fermentador.</span></label></div>
-    <label class="f" for="cc-og">Densidad inicial real ${enPlato() ? "(°P)" : "(ej. 1.050)"}<input id="cc-og" inputmode="decimal" value="${denIn(c.ogReal)}" style="max-width:200px"><span class="h" id="cc-ogh"></span></label>
-    <div><button type="button" class="btn sm" id="cc-calc">Calcular insumos desde la receta</button> <span class="h" id="cc-k"></span></div>
-    <div><h3 class="lbl">Insumos que usaste</h3><div id="cc-items" class="stack" style="gap:8px"></div><button type="button" class="btn sm" id="cc-add" style="margin-top:8px">+ Insumo</button></div>
-    <div><h3 class="lbl">Levadura</h3><div class="seg">
-      <label><input type="radio" name="cc-lv" value="nueva" ${lv.tipo !== "reutilizada" ? "checked" : ""}><span><strong>Nueva</strong><br><span class="small muted">Sale del stock de insumos.</span></span></label>
-      <label><input type="radio" name="cc-lv" value="reutilizada" ${lv.tipo === "reutilizada" ? "checked" : ""}><span><strong>Reutilizada</strong><br><span class="small muted">Cosechada de otra tanda: no se descuenta del stock.</span></span></label></div>
-      <div class="grid2" id="cc-rw" style="margin-top:8px" ${lv.tipo === "reutilizada" ? "" : "hidden"}><label class="f" for="cc-dt">De qué tanda<select id="cc-dt">${prev.length ? opts(prev, lv.deTandaId, (x) => x.codigo + " · " + (x.estilo || "") + " · " + fmtF(x.fecha)) : '<option value="">No hay tandas anteriores</option>'}</select></label>
-      <label class="f" for="cc-g">Generación<input id="cc-g" type="number" min="2" step="1" value="${esc((_c = lv.gen) != null ? _c : "")}" style="max-width:120px"><span class="h">Se calcula sola: la de la tanda de origen + 1.</span></label>
-      <label class="row" style="gap:8px;grid-column:1/-1;font-weight:400;cursor:pointer"><input type="checkbox" id="cc-ln" class="ck" ${lv.refuerzo ? "checked" : ""}> <span>No arrancó bien y agregué levadura nueva <span class="muted small">(esa sí se descuenta del stock)</span></span></label></div></div>
-    <div class="note row between"><span>Costo de insumos</span><strong class="num" id="cc-tot">$ 0</strong></div>
-    <button class="btn pri" type="submit">Guardar cocción</button></form>`, () => {
-      const box = $("#cc-items");
-      let n = 0;
-      const reut = () => (document.querySelector("input[name=cc-lv]:checked") || {}).value === "reutilizada";
-      const noDesc = () => reut() && !$("#cc-ln").checked;
-      const tot = () => {
-        let s = 0;
-        box.querySelectorAll(".cc-row").forEach((d) => {
-          var _a2;
-          const id2 = d.querySelector(".cc-i").value, q = +d.querySelector(".cc-q").value || 0, x = R[id2], sk = noDesc() && esLev(id2);
-          d.querySelector(".cc-u").textContent = uTxt((_a2 = S.insumos.find((z) => z.id === id2)) == null ? void 0 : _a2.unidad);
-          const prevQ = (c.items || []).filter((it) => it.insumoId === id2).reduce((a, it) => a + Number(it.cantidad || 0), 0), disp = (x ? x.stock : 0) + prevQ;
-          d.querySelector(".cc-s").innerHTML = sk ? '<span class="muted">Reutilizada: no se descuenta</span>' : q > disp + 1e-9 ? `<span style="color:var(--warn)">Hay ${fmtN(disp)}: quedaría en negativo</span>` : `<span class="muted">Hay ${fmtN(disp)}</span>`;
+    var L = cocsDe(t);
+    n = n === "nueva" ? L.length + 1 : Number(n) || 1;
+    var nueva = n > L.length;
+    var c = L[n - 1] || {}, R = insCalc();
+    var c1 = L[0] || {};
+    var rec0 = S.recetas.find(function (r) { return r.id === (c.recetaId || (nueva && n > 1 ? c1.recetaId : null) || t.recetaId); });
+    var recs = S.recetas.filter(function (r) { return !r.archivada || (rec0 && r.id === rec0.id); }).sort(function (a, b) { return String(a.nombre).localeCompare(String(b.nombre), "es"); });
+    var prev = porFecha(S.tandas.filter(function (x) { return x.id !== id && String(x.fecha) <= String(t.fecha); }));
+    var otras = L.filter(function (x) { return x.n !== n; }).reduce(function (s, x) { return s + (Number(x.base) || 0); }, 0);
+    var F = S.fermentadores.find(function (f) { return f.id === t.fermentadorId; }) || {};
+    var lv = c.levadura || { tipo: n > 1 ? "ninguna" : "nueva" };
+    var baseIni = c.base != null ? c.base : (n === 1 && !L.length ? t.mosto : (F.capacidad && otras && Number(F.capacidad) - otras > 0 ? Number(F.capacidad) - otras : ""));
+    var multi = L.length > 1 || n > 1;
+    openSheet((nueva ? "Nueva cocción " : "Cocción ") + (multi ? n + " · " : "· ") + t.codigo, '<form class="stack" id="f">' +
+      (n > 1 ? '<div class="note">Esta cocción va al <strong>mismo fermentador</strong> que la anterior' + (L.length > 1 || !nueva ? "s" : "") + ' y suma a la tanda <strong>' + esc(t.codigo) + "</strong>. Ya hay " + fmtN(otras) + " L de mosto de las otras cocciones.</div>" : "") +
+      '<div class="note"><strong>Todo esto es provisorio.</strong> Si pasó algo distinto, o te das cuenta después, volvé y corregilo: el stock de insumos se acomoda solo y queda la marca de que se corrigió.</div>' +
+      '<div class="grid2"><label class="f" for="cc-r">Receta<select id="cc-r"><option value="">Sin receta</option>' + opts(recs, rec0 && rec0.id, function (r) { return r.nombre + " · para " + fmtN(r.litros) + " L"; }) + "</select></label>" +
+      '<label class="f" for="cc-b">Litros de mosto que salieron de ' + (multi ? "esta cocción" : "la cocción") + '<input id="cc-b" type="number" min="0" step="any" inputmode="decimal" value="' + esc(baseIni == null ? "" : baseIni) + '"><span class="h" id="cc-bh">Lo que entró al fermentador.</span></label></div>' +
+      (multi ? '<label class="f" for="cc-lf">Cerveza final esperada de toda la tanda (L)<input id="cc-lf" type="number" min="0" step="any" inputmode="decimal" value="' + esc(t.litros == null ? "" : t.litros) + '" style="max-width:200px"><span class="h" id="cc-lfh">Lo que esperás envasar, sumando todas las cocciones.</span></label>' : "") +
+      '<label class="f" for="cc-og">Densidad inicial real ' + (enPlato() ? "(°P)" : "(ej. 1.050)") + '<input id="cc-og" inputmode="decimal" value="' + denIn(c.ogReal) + '" style="max-width:200px"><span class="h" id="cc-ogh"></span></label>' +
+      '<div><button type="button" class="btn sm" id="cc-calc">Calcular insumos desde la receta</button> <span class="h" id="cc-k"></span></div>' +
+      '<div><h3 class="lbl">Insumos que usaste</h3><div id="cc-items" class="stack" style="gap:8px"></div><button type="button" class="btn sm" id="cc-add" style="margin-top:8px">+ Insumo</button></div>' +
+      '<div><h3 class="lbl">Levadura</h3><div class="seg">' +
+      (n > 1 ? '<label><input type="radio" name="cc-lv" value="ninguna" ' + (lv.tipo === "ninguna" ? "checked" : "") + '><span><strong>Ya está en el fermentador</strong><br><span class="small muted">La puso la cocción 1: no se descuenta.</span></span></label>' : "") +
+      '<label><input type="radio" name="cc-lv" value="nueva" ' + (lv.tipo === "nueva" ? "checked" : "") + '><span><strong>Nueva</strong><br><span class="small muted">Sale del stock de insumos.</span></span></label>' +
+      '<label><input type="radio" name="cc-lv" value="reutilizada" ' + (lv.tipo === "reutilizada" ? "checked" : "") + '><span><strong>Reutilizada</strong><br><span class="small muted">Cosechada de otra tanda: no se descuenta del stock.</span></span></label></div>' +
+      '<div class="grid2" id="cc-rw" style="margin-top:8px" ' + (lv.tipo === "reutilizada" ? "" : "hidden") + '><label class="f" for="cc-dt">De qué tanda<select id="cc-dt">' + (prev.length ? opts(prev, lv.deTandaId, function (x) { return x.codigo + " · " + (x.estilo || "") + " · " + fmtF(x.fecha); }) : '<option value="">No hay tandas anteriores</option>') + "</select></label>" +
+      '<label class="f" for="cc-g">Generación<input id="cc-g" type="number" min="2" step="1" value="' + esc(lv.gen == null ? "" : lv.gen) + '" style="max-width:120px"><span class="h">Se calcula sola: la de la tanda de origen + 1.</span></label>' +
+      '<label class="row" style="gap:8px;grid-column:1/-1;font-weight:400;cursor:pointer"><input type="checkbox" id="cc-ln" class="ck" ' + (lv.refuerzo ? "checked" : "") + '> <span>No arrancó bien y agregué levadura nueva <span class="muted small">(esa sí se descuenta del stock)</span></span></label></div></div>' +
+      '<div class="note row between"><span>Costo de insumos' + (multi ? " de esta cocción" : "") + '</span><strong class="num" id="cc-tot">$ 0</strong></div>' +
+      '<div class="row between"><button class="btn pri" type="submit">Guardar cocción</button>' + (n > 1 && !nueva && S.canWrite ? '<button class="btn danger" type="button" id="cc-del">Quitar esta cocción</button>' : "") + "</div></form>", function () {
+      var box = $("#cc-items");
+      var k = 0;
+      var lvSel = function () { return (document.querySelector("input[name=cc-lv]:checked") || {}).value; };
+      var reut = function () { return lvSel() === "reutilizada"; };
+      var noDesc = function () { return lvSel() === "ninguna" || (reut() && !$("#cc-ln").checked); };
+      var tot = function () {
+        var s = 0;
+        box.querySelectorAll(".cc-row").forEach(function (d) {
+          var id2 = d.querySelector(".cc-i").value, q = +d.querySelector(".cc-q").value || 0, x = R[id2], sk = noDesc() && esLev(id2);
+          var ii = S.insumos.find(function (z) { return z.id === id2; });
+          d.querySelector(".cc-u").textContent = uTxt(ii && ii.unidad);
+          var prevQ = (c.items || []).filter(function (it) { return it.insumoId === id2; }).reduce(function (a, it) { return a + Number(it.cantidad || 0); }, 0), disp = (x ? x.stock : 0) + prevQ;
+          d.querySelector(".cc-s").innerHTML = sk ? '<span class="muted">' + (lvSel() === "ninguna" ? "Ya está en el fermentador" : "Reutilizada") + ": no se descuenta</span>" : q > disp + 1e-9 ? '<span style="color:var(--warn)">Hay ' + fmtN(disp) + ": quedaría en negativo</span>" : '<span class="muted">Hay ' + fmtN(disp) + "</span>";
           d.style.opacity = sk ? 0.55 : 1;
           if (!sk && x && x.avg) s += q * x.avg;
         });
         $("#cc-tot").textContent = fmt$(s);
       };
-      const add = (it) => {
+      var add = function (it) {
         it = it || {};
-        n++;
-        const d = document.createElement("div");
+        k++;
+        var d = document.createElement("div");
         d.className = "cc-row grid3";
         d.style.gridTemplateColumns = "2fr 1fr auto";
         d.style.alignItems = "end";
-        d.innerHTML = `<label class="f" for="cc-i${n}">Insumo<select id="cc-i${n}" class="cc-i">${insOpts(it.insumoId)}</select><span class="h cc-s"></span></label><label class="f" for="cc-q${n}"><span>Cantidad (<span class="cc-u"></span>)</span><input id="cc-q${n}" class="cc-q" type="number" min="0" step="any" inputmode="decimal" value="${esc(it.cantidad != null ? Math.round(it.cantidad * 1e3) / 1e3 : "")}"></label><button type="button" class="btn sm cc-x" aria-label="Quitar" style="margin-bottom:22px">×</button>`;
+        d.innerHTML = '<label class="f" for="cc-i' + k + '">Insumo<select id="cc-i' + k + '" class="cc-i">' + insOpts(it.insumoId) + '</select><span class="h cc-s"></span></label><label class="f" for="cc-q' + k + '"><span>Cantidad (<span class="cc-u"></span>)</span><input id="cc-q' + k + '" class="cc-q" type="number" min="0" step="any" inputmode="decimal" value="' + esc(it.cantidad != null ? Math.round(it.cantidad * 1e3) / 1e3 : "") + '"></label><button type="button" class="btn sm cc-x" aria-label="Quitar" style="margin-bottom:22px">×</button>';
         box.appendChild(d);
         d.querySelector(".cc-i").addEventListener("change", tot);
         d.querySelector(".cc-q").addEventListener("input", tot);
-        d.querySelector(".cc-x").addEventListener("click", () => {
-          d.remove();
-          tot();
-        });
+        d.querySelector(".cc-x").addEventListener("click", function () { d.remove(); tot(); });
         nuevoInsumoInline(d, ".cc-i", tot);
       };
-      const fromRec = () => {
-        const r = S.recetas.find((z) => z.id === val("cc-r"));
-        const b = +val("cc-b");
-        if (!r) {
-          toast("Elegí una receta.");
-          return;
-        }
-        if (!(b > 0)) {
-          toast("Poné los litros de mosto.");
-          return;
-        }
-        const k = b / r.litros, g = {};
-        (r.ingredientes || []).forEach((x) => {
-          g[x.insumoId] = (g[x.insumoId] || 0) + Number(x.cantidad || 0) * k;
-        });
+      var fromRec = function () {
+        var r = S.recetas.find(function (z) { return z.id === val("cc-r"); });
+        var b = +val("cc-b");
+        if (!r) { toast("Elegí una receta."); return; }
+        if (!(b > 0)) { toast("Poné los litros de mosto."); return; }
+        var kk = b / r.litros, g = {};
+        (r.ingredientes || []).forEach(function (x) { g[x.insumoId] = (g[x.insumoId] || 0) + Number(x.cantidad || 0) * kk; });
         box.innerHTML = "";
-        Object.keys(g).forEach((k2) => add({ insumoId: k2, cantidad: g[k2] }));
-        $("#cc-k").textContent = `Receta ×${(Math.round(k * 100) / 100).toLocaleString("es-AR")} (para ${fmtN(b)} L). Corregí lo que hayas usado distinto.`;
+        Object.keys(g).forEach(function (k2) { add({ insumoId: k2, cantidad: g[k2] }); });
+        $("#cc-k").textContent = "Receta ×" + (Math.round(kk * 100) / 100).toLocaleString("es-AR") + " (para " + fmtN(b) + " L). Corregí lo que hayas usado distinto.";
         tot();
       };
+      var bh = function () {
+        var b = +val("cc-b") || 0, total = otras + b, h = $("#cc-bh");
+        if (multi) {
+          h.innerHTML = "Mosto total de la tanda: <strong>" + fmtN(total) + " L</strong>" + (F.capacidad && total > Number(F.capacidad) + 1e-9 ? ' <span style="color:var(--warn)">· supera la capacidad de ' + esc(F.nombre || "el fermentador") + " (" + fmtN(F.capacidad) + " L)</span>" : "");
+          var lf = $("#cc-lf"), lfh = $("#cc-lfh");
+          if (lf && F.capacidad && F.rinde && total > 0) {
+            var sug = Math.round(total * Number(F.rinde) / Number(F.capacidad));
+            if (!lf.dataset.m) lf.value = sug;
+            lfh.textContent = "Sugerido: " + fmtN(sug) + " L, según lo que rinde " + (F.nombre || "el fermentador") + ". Corregilo si esperás otra cosa.";
+          }
+        }
+      };
       $("#cc-calc").addEventListener("click", fromRec);
-      $("#cc-add").addEventListener("click", () => {
-        add();
-        tot();
-      });
+      $("#cc-add").addEventListener("click", function () { add(); tot(); });
+      $("#cc-b").addEventListener("input", bh);
+      if ($("#cc-lf")) $("#cc-lf").addEventListener("input", function () { $("#cc-lf").dataset.m = "1"; });
       if ((c.items || []).length) c.items.forEach(add);
       else if (rec0 && +val("cc-b") > 0) fromRec();
       else add();
-      const gen = () => {
-        var _a2, _b2;
-        const o = S.tandas.find((z) => z.id === val("cc-dt"));
-        const g = $("#cc-g");
-        if (o && !g.dataset.m) g.value = (((_b2 = (_a2 = o.coccion) == null ? void 0 : _a2.levadura) == null ? void 0 : _b2.tipo) === "reutilizada" ? Number(o.coccion.levadura.gen || 2) : 1) + 1;
+      if (!nueva && $("#cc-lf")) $("#cc-lf").dataset.m = "1";
+      bh();
+      var gen = function () {
+        var o = S.tandas.find(function (z) { return z.id === val("cc-dt"); });
+        var g = $("#cc-g");
+        var ol = o && o.coccion && o.coccion.levadura;
+        if (o && !g.dataset.m) g.value = (ol && ol.tipo === "reutilizada" ? Number(ol.gen || 2) : 1) + 1;
       };
-      $("#cc-g").addEventListener("input", () => {
-        $("#cc-g").dataset.m = "1";
-      });
+      $("#cc-g").addEventListener("input", function () { $("#cc-g").dataset.m = "1"; });
       $("#cc-dt").addEventListener("change", gen);
-      document.querySelectorAll("input[name=cc-lv]").forEach((x) => x.addEventListener("change", () => {
-        $("#cc-rw").hidden = !reut();
-        if (reut() && !val("cc-g")) gen();
-        tot();
-      }));
+      document.querySelectorAll("input[name=cc-lv]").forEach(function (x) {
+        x.addEventListener("change", function () { $("#cc-rw").hidden = !reut(); if (reut() && !val("cc-g")) gen(); tot(); });
+      });
       $("#cc-ln").addEventListener("change", tot);
-      const ogh = () => {
-        const rr = S.recetas.find((z) => z.id === val("cc-r"));
-        const o = denOut(val("cc-og"));
-        const h = $("#cc-ogh");
-        if (!rr || !rr.og) {
-          h.textContent = rr ? "La receta no tiene densidad objetivo." : "";
-          return;
-        }
-        if (!o) {
-          h.textContent = "Objetivo de la receta: " + denTxt(rr.og);
-          return;
-        }
-        const d = o - rr.og;
-        h.innerHTML = `Objetivo ${denTxt(rr.og)} · ${Math.abs(d) < 15e-4 ? '<span style="color:var(--ok)">en objetivo</span>' : `<span style="color:var(--warn)">${d < 0 ? "abajo" : "arriba"} del objetivo</span>`}`;
+      var ogh = function () {
+        var rr = S.recetas.find(function (z) { return z.id === val("cc-r"); });
+        var o = denOut(val("cc-og"));
+        var h = $("#cc-ogh");
+        if (!rr || !rr.og) { h.textContent = rr ? "La receta no tiene densidad objetivo." : ""; return; }
+        if (!o) { h.textContent = "Objetivo de la receta: " + denTxt(rr.og); return; }
+        var dd = o - rr.og;
+        h.innerHTML = "Objetivo " + denTxt(rr.og) + " · " + (Math.abs(dd) < 15e-4 ? '<span style="color:var(--ok)">en objetivo</span>' : '<span style="color:var(--warn)">' + (dd < 0 ? "abajo" : "arriba") + " del objetivo</span>");
       };
       $("#cc-og").addEventListener("input", ogh);
       $("#cc-r").addEventListener("change", ogh);
       ogh();
       tot();
-      submitOnce($("#f"), () => {
-        const rs = reut(), nd = noDesc();
-        const items = [...box.querySelectorAll(".cc-row")].map((d) => ({ insumoId: d.querySelector(".cc-i").value, cantidad: Math.round((+d.querySelector(".cc-q").value || 0) * 1e3) / 1e3 })).filter((x) => x.cantidad > 0 && x.insumoId && !(nd && esLev(x.insumoId)));
-        if (rs && !val("cc-dt")) {
-          toast("Elegí de qué tanda viene la levadura.");
-          return false;
-        }
-        const b = val("cc-b") === "" ? null : +val("cc-b");
-        const r = S.recetas.find((z) => z.id === val("cc-r"));
-        const now = (/* @__PURE__ */ new Date()).toISOString();
-        items.forEach((x) => {
-          const a = R[x.insumoId];
-          x.costo = a && a.avg ? Math.round(x.cantidad * a.avg * 100) / 100 : null;
-        });
-        const costo = items.reduce((s, x) => s + (x.costo || 0), 0);
-        const coccion = { recetaId: (r == null ? void 0 : r.id) || null, recetaNombre: (r == null ? void 0 : r.nombre) || null, base: b, items, costo: Math.round(costo * 100) / 100, levadura: rs ? { tipo: "reutilizada", deTandaId: val("cc-dt"), gen: +val("cc-g") || 2, refuerzo: !nd } : { tipo: "nueva" }, ogReal: denOut(val("cc-og")), ogObj: (r == null ? void 0 : r.og) || null, provisorio: true, actualizada: now, correcciones: (c.correcciones || 0) + (t.coccion ? 1 : 0), por: S.uid };
-        return W(async () => {
-          for (const m of S.movins.filter((m2) => m2.tandaId === id && m2.tipo === "consumo" && !m2.anulado)) await db.doc("movins/" + m.id).update({ anulado: true, anuladoEn: now, anuladoMotivo: "Cocción corregida" });
-          for (const x of items) await db.collection("movins").add({ insumoId: x.insumoId, tipo: "consumo", cantidad: -x.cantidad, motivo: `Cocción ${t.codigo}${t.estilo ? " · " + t.estilo : ""}`, tandaId: id, fecha: t.fecha || hoy(), t: now, por: S.uid });
-          const up = { coccion, recetaId: (r == null ? void 0 : r.id) || null };
-          if (b != null) up.mosto = b;
+      var anular = async function (now, motivo) {
+        var M = S.movins.filter(function (m2) { return m2.tandaId === id && m2.tipo === "consumo" && !m2.anulado && (Number(m2.cocN) || 1) === n; });
+        for (var i = 0; i < M.length; i++) await db.doc("movins/" + M[i].id).update({ anulado: true, anuladoEn: now, anuladoMotivo: motivo });
+      };
+      var del = $("#cc-del");
+      if (del) armDelete(del, async function () {
+        var now = new Date().toISOString();
+        await anular(now, "Cocción quitada");
+        var ex = (t.cocExtra || []).slice();
+        ex.splice(n - 2, 1);
+        var restantes = cocsDe(Object.assign({}, t, { cocExtra: ex }));
+        var up = { cocExtra: ex };
+        var mt = restantes.reduce(function (s, x) { return s + (Number(x.base) || 0); }, 0);
+        if (mt > 0) up.mosto = mt;
+        await db.doc("tandas/" + id).update(up);
+        toast("Cocción quitada · stock devuelto. Revisá los litros esperados con Ajustar litros.");
+      });
+      submitOnce($("#f"), function () {
+        var rs = reut(), nd = noDesc();
+        var items = [].slice.call(box.querySelectorAll(".cc-row")).map(function (d) { return { insumoId: d.querySelector(".cc-i").value, cantidad: Math.round((+d.querySelector(".cc-q").value || 0) * 1e3) / 1e3 }; }).filter(function (x) { return x.cantidad > 0 && x.insumoId && !(nd && esLev(x.insumoId)); });
+        if (rs && !val("cc-dt")) { toast("Elegí de qué tanda viene la levadura."); return false; }
+        var b = val("cc-b") === "" ? null : +val("cc-b");
+        if (multi && !(b > 0)) { toast("Poné los litros de mosto de esta cocción."); return false; }
+        var r = S.recetas.find(function (z) { return z.id === val("cc-r"); });
+        var now = new Date().toISOString();
+        items.forEach(function (x) { var a = R[x.insumoId]; x.costo = a && a.avg ? Math.round(x.cantidad * a.avg * 100) / 100 : null; });
+        var costo = items.reduce(function (s, x) { return s + (x.costo || 0); }, 0);
+        var lvs = lvSel();
+        var coccion = { recetaId: (r && r.id) || null, recetaNombre: (r && r.nombre) || null, base: b, items: items, costo: Math.round(costo * 100) / 100, levadura: lvs === "reutilizada" ? { tipo: "reutilizada", deTandaId: val("cc-dt"), gen: +val("cc-g") || 2, refuerzo: !nd } : { tipo: lvs || "nueva" }, ogReal: denOut(val("cc-og")), ogObj: (r && r.og) || null, provisorio: true, actualizada: now, correcciones: (c.correcciones || 0) + (nueva ? 0 : 1), por: S.uid };
+        return W(async function () {
+          await anular(now, "Cocción corregida");
+          for (var i = 0; i < items.length; i++) {
+            var x = items[i];
+            await db.collection("movins").add({ insumoId: x.insumoId, tipo: "consumo", cantidad: -x.cantidad, motivo: "Cocción " + (multi ? n + " de " : "") + t.codigo + (t.estilo ? " · " + t.estilo : ""), tandaId: id, cocN: n, fecha: t.fecha || hoy(), t: now, por: S.uid });
+          }
+          var up = {};
+          if (n === 1) { up.coccion = coccion; up.recetaId = (r && r.id) || null; }
+          else { var ex = (t.cocExtra || []).slice(); ex[n - 2] = coccion; up.cocExtra = ex; }
+          var todas = cocsDe(Object.assign({}, t, up));
+          var mt = todas.reduce(function (s, y) { return s + (Number(y.base) || 0); }, 0);
+          if (multi) { if (mt > 0) up.mosto = mt; var lf = val("cc-lf"); if (lf !== "" && +lf > 0) up.litros = +lf; }
+          else if (b != null) up.mosto = b;
           await db.doc("tandas/" + id).update(up);
           closeSheet();
-          toast(t.coccion ? "Cocción corregida · stock actualizado" : "Cocción guardada · insumos descontados");
+          toast(nueva ? (n > 1 ? "Cocción " + n + " sumada · insumos descontados" : "Cocción guardada · insumos descontados") : "Cocción corregida · stock actualizado");
         });
       });
     });
@@ -3911,7 +3966,15 @@ function nuevoInsumoInline(row,selCls,after){
         break;
       case "coccion":
         closeSheet();
-        sheetCoccion(id);
+        abrirCoccion(id);
+        break;
+      case "coccion-n":
+        closeSheet();
+        sheetCoccion(id, 0, Number(a.dataset.n) || 1);
+        break;
+      case "coccion-mas":
+        closeSheet();
+        sheetCoccion(id, 0, "nueva");
         break;
       case "ver-receta":
         sheetVerReceta(id);
@@ -4348,6 +4411,7 @@ function nuevoInsumoInline(row,selCls,after){
 /* Novedades para testers */
 (function(){
 var NOV=[
+ {id:'2026-11-18',f:'18 nov',t:['Dos o más cocciones al mismo fermentador: en la tarjeta del fermentador tocá "+ Otra cocción". Cada una descuenta sus insumos y suma su mosto a la misma tanda.','En la segunda cocción la levadura puede quedar como "Ya está en el fermentador", así no se descuenta dos veces.','Una cocción agregada por error se puede quitar, y el stock vuelve.']},
  {id:'2026-11-02c',f:'2 nov',t:['Recetas: el alcohol (ABV) se ve en su propio recuadro y se calcula solo al poner la densidad inicial y final.','La densidad se puede escribir 1.010, 1,010 o 1010: las tres valen.']},
  {id:'2026-11-02b',f:'2 nov',t:['Ingredientes más claros: cada fila se pinta del color de su categoría (malta, lúpulo, levadura…) y muestra una etiqueta.','La lista de insumos viene agrupada por categoría, y una fila nueva empieza vacía: ya no se elige un producto solo.']},
  {id:'2026-11-02',f:'2 nov',t:['Recetas y cocción: podés crear una malta, lúpulo o levadura nueva sin salir de la hoja, con "+ Nuevo insumo" debajo de cada ingrediente.']},
