@@ -607,7 +607,7 @@ details.cl summary::-webkit-details-marker{display:none}
   }
   function vista(D) {
     let h = S.canWrite ? "" : `<div class="banner small">Estás en modo lectura: podés ver todo, pero no cargar ni cambiar datos.</div>`;
-    return h + demoHTML() + alertasHTML(D) + ({ resumen: vResumen, retornables: vRet, stock: vStock, clientes: vClientes, fermentadores: vFerm, ajustes: vAjustes, insumos: vInsumos, recetas: vRecetas }[S.tab] || vResumen)(D);
+    return h + (S.tab === "resumen" ? demoHTML() : "") + alertasHTML(D) + ({ resumen: vResumen, retornables: vRet, stock: vStock, clientes: vClientes, fermentadores: vFerm, ajustes: vAjustes, insumos: vInsumos, recetas: vRecetas }[S.tab] || vResumen)(D);
   }
   function render() {
     renderTabs();

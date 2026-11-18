@@ -814,7 +814,7 @@ window.__cbSeed = function() {
   }
   function vista(D) {
     let h = S.canWrite ? "" : `<div class="banner small">Estás en modo lectura: podés ver todo, pero no cargar ni cambiar datos.</div>`;
-    return h + demoHTML() + alertasHTML(D) + ({ resumen: vResumen, retornables: vRet, stock: vStock, clientes: vClientes, fermentadores: vFerm, ajustes: vAjustes, insumos: vInsumos, recetas: vRecetas }[S.tab] || vResumen)(D);
+    return h + (S.tab === "resumen" ? demoHTML() : "") + alertasHTML(D) + ({ resumen: vResumen, retornables: vRet, stock: vStock, clientes: vClientes, fermentadores: vFerm, ajustes: vAjustes, insumos: vInsumos, recetas: vRecetas }[S.tab] || vResumen)(D);
   }
   function render() {
     renderTabs();
@@ -4434,6 +4434,8 @@ function pinta(todo){
   if(vr)vr.onclick=function(){pinta(true);};
 }
 pinta(false);
+function enResumen(){var b=document.querySelector('#tabs button[aria-current="page"]');box.hidden=!!(b&&b.dataset.tab!=='resumen');}
+var tb=document.getElementById('tabs');if(tb&&window.MutationObserver){new MutationObserver(enResumen).observe(tb,{childList:true,subtree:true,attributes:true});enResumen();}
 })();
 </script>
 </body>
