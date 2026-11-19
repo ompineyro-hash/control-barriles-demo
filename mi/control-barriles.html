@@ -375,7 +375,7 @@ details.cl summary::-webkit-details-marker{display:none}
 (function() {
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const COLS = ["tipos", "envases", "clientes", "tandas", "lotes", "fermentadores", "cervezas", "perdidas", "incidentes", "pagos", "insumos", "proveedores", "compras", "movins", "recetas", "pagosprov"];
+  const COLS = ["tipos", "envases", "clientes", "tandas", "lotes", "fermentadores", "cervezas", "perdidas", "incidentes", "pagos", "insumos", "proveedores", "compras", "movins", "recetas", "pagosprov", "ventascel"];
   const S = {
     tipos: [],
     envases: [],
@@ -393,6 +393,7 @@ details.cl summary::-webkit-details-marker{display:none}
     movins: [],
     recetas: [],
     pagosprov: [],
+    ventascel: [],
     config: { alertaDias: 30 },
     got: /* @__PURE__ */ new Set(),
     dbOk: null,
@@ -407,6 +408,10 @@ details.cl summary::-webkit-details-marker{display:none}
   try {
     const t = localStorage.getItem("cb-tab");
     if (t) S.tab = t;
+    if (location.hash === "#venta") {
+      S.tab = "venta";
+      if (!localStorage.getItem("cb-rol-venta" + (window.__CB_DEMO ? "-demo" : ""))) localStorage.setItem("cb-rol-venta" + (window.__CB_DEMO ? "-demo" : ""), "celu");
+    }
     else if (window.__CB_DEMO) S.tab = "resumen";
   } catch (e) {
   }
@@ -420,7 +425,7 @@ details.cl summary::-webkit-details-marker{display:none}
   const ORDEN = ["limpio", "lleno", "cliente", "sucio", "baja"];
   const ACC = { sucio: [["lavar", "Marcar lavado"]], limpio: [["llenar", "Llenar"]], lleno: [["enviar", "Enviar a cliente"], ["asignar", "Asignar cerveza"]], cliente: [["recibir", "Recibir"]], baja: [] };
   const ACC_TXT = { crear: "Alta", lavar: "Lavado", llenar: "Llenado", enviar: "Enviado", recibir: "Recibido", corregir: "Estado corregido", asignar: "Cerveza asignada", anular: "Movimiento deshecho", problema: "Problema reportado", resuelto: "Problema resuelto" };
-  const TABS = [["fermentadores", "🧪 Fermentadores"], ["recetas", "📖 Recetas"], ["retornables", "🛢️ Retornables"], ["stock", "📦 Stock"], ["insumos", "🧺 Insumos"], ["clientes", "🤝 Clientes"], ["resumen", "📊 Resumen"], ["ajustes", "⚙️ Ajustes"]];
+  const TABS = [["fermentadores", "🧪 Fermentadores"], ["recetas", "📖 Recetas"], ["retornables", "🛢️ Retornables"], ["stock", "📦 Stock"], ["venta", "📱 Venta rápida"], ["insumos", "🧺 Insumos"], ["clientes", "🤝 Clientes"], ["resumen", "📊 Resumen"], ["ajustes", "⚙️ Ajustes"]];
   const HMAX = 120;
   const MOTIVOS = ["Contaminación / infección", "Oxidación o sabor defectuoso", "Rotura, pérdida o derrame", "Vencida", "Error de proceso", "Otro"];
   const fmt$ = (n) => "$ " + Math.round(Number(n) || 0).toLocaleString("es-AR");
@@ -605,14 +610,14 @@ details.cl summary::-webkit-details-marker{display:none}
     return out;
   }
   const TABMOD = { retornables: "barriles", insumos: "insumos", recetas: "recetas" };
-  const tabOn = (k) => !TABMOD[k] || mod(TABMOD[k]);
+  const tabOn = (k) => soloVenta() ? k === "venta" : k === "venta" ? ventaOn() : !TABMOD[k] || mod(TABMOD[k]);
   function renderTabs() {
-    if (!tabOn(S.tab)) S.tab = "fermentadores";
+    if (!tabOn(S.tab)) S.tab = soloVenta() ? "venta" : "fermentadores";
     $("#tabs").innerHTML = TABS.filter(([k]) => tabOn(k)).map(([k, l]) => `<button data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}>${l}</button>`).join("");
   }
   function vista(D) {
     let h = S.canWrite ? "" : `<div class="banner small">Estás en modo lectura: podés ver todo, pero no cargar ni cambiar datos.</div>`;
-    return h + (S.tab === "resumen" ? demoHTML() : "") + alertasHTML(D) + ({ resumen: vResumen, retornables: vRet, stock: vStock, clientes: vClientes, fermentadores: vFerm, ajustes: vAjustes, insumos: vInsumos, recetas: vRecetas }[S.tab] || vResumen)(D);
+    return h + (S.tab === "resumen" ? demoHTML() : "") + (S.tab === "venta" ? "" : alertasHTML(D)) + ({ venta: vVenta, resumen: vResumen, retornables: vRet, stock: vStock, clientes: vClientes, fermentadores: vFerm, ajustes: vAjustes, insumos: vInsumos, recetas: vRecetas }[S.tab] || vResumen)(D);
   }
   function render() {
     renderTabs();
@@ -985,7 +990,7 @@ details.cl summary::-webkit-details-marker{display:none}
     return h + `<div class="panel tbl"><table><thead><tr><th>Carga</th><th>Cerveza</th><th>Envasado</th><th class="r">Litros</th><th></th></tr></thead><tbody>` + porFecha(S.tandas).map((t) => tandaRow(t, D)).join("") + `</tbody></table></div>`;
   }
   function modulosHTML(pre) {
-    return `<div class="seg"><label><input type="checkbox" id="${pre}-b" ${mod("barriles") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Barriles retornables</strong><br><span class="small muted">Cada barril con su código, ciclo, clientes y devolución.</span></span></label><label><input type="checkbox" id="${pre}-l" ${mod("latas") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Latas y otros por cantidad</strong><br><span class="small muted">Envasado por lote, stock, ventas y pagos.</span></span></label><label><input type="checkbox" id="${pre}-i" ${mod("insumos") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Insumos y compras</strong><br><span class="small muted">Stock de maltas, lúpulos, levaduras y envases vacíos, proveedores y costos.</span></span></label><label><input type="checkbox" id="${pre}-r" ${mod("recetas") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Recetas</strong><br><span class="small muted">Ingredientes, parámetros y costo de cada receta.</span></span></label></div>`;
+    return `<div class="seg"><label><input type="checkbox" id="${pre}-b" ${mod("barriles") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Barriles retornables</strong><br><span class="small muted">Cada barril con su código, ciclo, clientes y devolución.</span></span></label><label><input type="checkbox" id="${pre}-l" ${mod("latas") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Latas y otros por cantidad</strong><br><span class="small muted">Envasado por lote, stock, ventas y pagos.</span></span></label><label><input type="checkbox" id="${pre}-i" ${mod("insumos") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Insumos y compras</strong><br><span class="small muted">Stock de maltas, lúpulos, levaduras y envases vacíos, proveedores y costos.</span></span></label><label><input type="checkbox" id="${pre}-r" ${mod("recetas") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Recetas</strong><br><span class="small muted">Ingredientes, parámetros y costo de cada receta.</span></span></label>${pre === "md" ? `<label><input type="checkbox" id="md-p" ${mod("apagar") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Cuentas a pagar</strong><br><span class="small muted">Compras que quedan a pagar, pagos y lo que le debés a cada proveedor.</span></span></label><label><input type="checkbox" id="md-v" ${modOn("ventacel") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Venta rápida y celulares</strong><br><span class="small muted">Cargar ventas en segundos y recibir las de otros celulares.</span></span></label>` : ""}</div>`;
   }
   function vAjustes(D) {
     var _a, _b;
@@ -1200,6 +1205,227 @@ const CATEMO = { Malta: "🌾", "Lúpulo": "🌿", Levadura: "🧫", Adjunto: "�
       });
     });
   }
+  const LSX = window.__CB_DEMO ? "-demo" : "";
+  const lsGet = (k) => { try { return localStorage.getItem(k + LSX); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { if (v == null) localStorage.removeItem(k + LSX); else localStorage.setItem(k + LSX, v); } catch (e) {} };
+  const modOn = (k) => !!(S.config.modulos && S.config.modulos[k] === true);
+  const rolVenta = () => lsGet("cb-rol-venta") || (S.lotes.some((l) => l.disponibles > 0) || S.tandas.length ? "principal" : "celu");
+  const ventaOn = () => modOn("ventacel") || lsGet("cb-rol-venta") === "celu";
+  const soloVenta = () => lsGet("cb-solo-venta") === "1" && ventaOn();
+  const vendedorNom = () => lsGet("cb-vendedor") || "";
+  const nrm = (x) => String(x || "").trim().toLowerCase();
+  function catalogoLocal() {
+    const D = derive(), G = {};
+    S.lotes.forEach((l) => {
+      if (!(l.disponibles > 0)) return;
+      const k = D.K[l.tandaId];
+      if (k && k.retenida) return;
+      const t = D.T[l.tipoId], est = capi(k && k.estilo);
+      const key = nrm(est) + "|" + l.tipoId + "|" + l.medida;
+      if (!G[key]) G[key] = { estilo: est, tipoId: l.tipoId, tipoNombre: (t && t.nombre) || "Envase", unidad: (t && t.unidad) || "ml", medida: Number(l.medida), disp: 0, precio: precioLata(k && k.estilo) || null };
+      G[key].disp += Number(l.disponibles) || 0;
+    });
+    return Object.values(G).sort((a, b) => a.estilo.localeCompare(b.estilo, "es") || a.medida - b.medida);
+  }
+  function catalogoImp() { try { return JSON.parse(lsGet("cb-catalogo") || "null"); } catch (e) { return null; } }
+  function itemsVenta() {
+    if (rolVenta() === "principal") return catalogoLocal();
+    const c = catalogoImp();
+    return (c && c.items) || [];
+  }
+  function clientesVenta() {
+    const M = {};
+    S.clientes.forEach((c) => { M[c.id] = { id: c.id, nombre: c.nombre }; });
+    const c = rolVenta() === "celu" ? catalogoImp() : null;
+    ((c && c.clientes) || []).forEach((x) => { if (!M[x.id]) M[x.id] = x; });
+    return Object.values(M).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), "es"));
+  }
+  const itemTxt = (it) => `${it.estilo} · ${it.tipoNombre} ${fmtN(it.medida)} ${it.unidad || ""}`.trim();
+  const ventaTxt = (v) => `${fmtF(v.fecha)} · ${v.clienteNombre || v.destino || "Mostrador"} · ${fmtN(v.cantidad)} ${v.tipoNombre || ""} ${fmtN(v.medida)} ${v.estilo || ""}${v.total ? " · " + fmt$(v.total) : ""}${v.pago === "pendiente" ? " · debe" : ""}`;
+  function lotesPara(v, C) {
+    const D = derive();
+    return S.lotes.map((l) => C && C[l.id] ? Object.assign({}, l, C[l.id]) : l).filter((l) => {
+      if (!(l.disponibles > 0)) return false;
+      const k = D.K[l.tandaId];
+      if (!k || k.retenida) return false;
+      if (nrm(capi(k.estilo)) !== nrm(v.estilo) || Number(l.medida) !== Number(v.medida)) return false;
+      if (v.tipoId && D.T[v.tipoId]) return l.tipoId === v.tipoId;
+      const t = D.T[l.tipoId];
+      return nrm(t && t.nombre) === nrm(v.tipoNombre);
+    }).sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)) || String(a.creado || "").localeCompare(String(b.creado || "")));
+  }
+  const stockPara = (v, C) => lotesPara(v, C).reduce((s, l) => s + Number(l.disponibles), 0);
+  async function clientePara(v, C) {
+    if (v.clienteId && S.clientes.some((c) => c.id === v.clienteId)) return v.clienteId;
+    if (!v.clienteNombre) return null;
+    const nm = nrm(v.clienteNombre);
+    if (C && C._cli && C._cli[nm]) return C._cli[nm];
+    const ex = S.clientes.find((c) => nrm(c.nombre) === nm);
+    if (ex) return ex.id;
+    const id = (await db.collection("clientes").add({ nombre: v.clienteNombre, notas: "Creado desde una venta del celular", creado: new Date().toISOString() })).id;
+    if (C) (C._cli = C._cli || {})[nm] = id;
+    return id;
+  }
+  async function aplicarVenta(v, C) {
+    C = C || {};
+    const L = lotesPara(v, C);
+    if (L.reduce((s, l) => s + Number(l.disponibles), 0) < v.cantidad) return false;
+    const cli = await clientePara(v, C);
+    const now = new Date().toISOString(), partes = [];
+    let resta = Number(v.cantidad);
+    for (const l of L) {
+      if (resta <= 0) break;
+      const n = Math.min(resta, Number(l.disponibles));
+      resta -= n;
+      const total = Math.round(n * (Number(v.precio) || 0) * 100) / 100;
+      const pago = v.precio > 0 ? (v.pago === "pendiente" && cli ? "pendiente" : "pagado") : null;
+      const sal = (l.salidas || []).slice(), idx = sal.length, dest = cli ? null : v.destino || "Mostrador";
+      sal.push({ t: now, fecha: v.fecha, cantidad: n, clienteId: cli, destino: dest, precio: v.precio || null, total: total || null, pago, origen: "celular", vendedor: v.vendedor || null, ventaId: v.vid, por: S.uid });
+      C[l.id] = { disponibles: l.disponibles - n, salidas: sal.slice(-200) };
+      await db.doc("lotes/" + l.id).update(C[l.id]);
+      if (pago === "pagado" && total) await db.collection("pagos").add({ t: now, fecha: v.fecha, clienteId: cli, monto: total, medio: v.medio || "Efectivo", nota: "Venta del celular" + (v.vendedor ? " · " + v.vendedor : ""), loteId: l.id, salidaIdx: idx, destino: dest, por: S.uid });
+      partes.push({ loteId: l.id, cantidad: n });
+    }
+    await db.doc("ventascel/" + v.id).update({ estado: "aplicada", aplicadaEn: now, partes, clienteId: cli });
+    return true;
+  }
+  function vVenta(D) {
+    const rol = rolVenta(), V = S.ventascel.slice().sort((a, b) => String(b.t).localeCompare(String(a.t)));
+    let h = `<div class="row between" style="margin-top:18px"><h2 class="sec" style="margin:0">Venta rápida</h2>${S.canWrite ? `<button class="btn pri" data-act="venta-rapida">+ Nueva venta</button>` : ""}</div>
+  <p class="muted small" style="margin:6px 0 12px">${rol === "principal" ? "Cargá una venta en segundos: se descuenta del stock y se suma a la cuenta del cliente. Las ventas de otros celulares se reciben acá." : "Este celular junta las ventas y después las mandás a la compu principal, que las descuenta del stock."}</p>`;
+    h += `<div class="panel card"><div class="grid2"><label class="f" for="vr-rol">Este aparato es…<select id="vr-rol"><option value="principal" ${rol === "principal" ? "selected" : ""}>La principal (tiene el stock)</option><option value="celu" ${rol === "celu" ? "selected" : ""}>Un celular de venta</option></select><span class="h">Se guarda solo en este aparato.</span></label>
+    <label class="f" for="vr-ven">Nombre de quien vende<input id="vr-ven" value="${esc(vendedorNom())}" placeholder="Ej.: Marcelo, Repartidor 1"><span class="h">Así se sabe de dónde vino cada venta.</span></label></div>
+    ${rol === "celu" ? `<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="vr-solo" ${soloVenta() ? "checked" : ""} style="width:20px;height:20px;flex:none;margin:0"> Mostrar solo la venta rápida en este celular (para un vendedor)</label>` : ""}</div>`;
+    if (rol === "celu") {
+      const c = catalogoImp(), pend = V.filter((v) => v.estado === "pendiente"), sinEnviar = pend.filter((v) => !v.exportadaEn);
+      h += `<h2 class="sec">Lista para vender</h2><div class="panel card"><div class="row between"><span class="small">${c ? `Cargada el ${fmtF(c.gen)}: ${c.items.length} producto${c.items.length === 1 ? "" : "s"} y ${(c.clientes || []).length} clientes.` : "Todavía no cargaste la lista de la compu. Se puede vender igual escribiendo la cerveza y el cliente."}</span><button class="btn sm" data-act="cargar-lista">${c ? "Actualizar lista" : "Cargar lista"}</button></div></div>`;
+      h += `<div class="row between" style="margin:26px 0 10px"><h2 class="sec" style="margin:0">Ventas de este celular</h2>${pend.length ? `<button class="btn pri sm" data-act="enviar-ventas">Enviar a la compu (${sinEnviar.length || pend.length})</button>` : ""}</div>`;
+      h += V.length ? `<div class="panel tbl"><table><tbody>${V.slice(0, 40).map((v) => `<tr><td class="small">${esc(ventaTxt(v))}</td><td class="r small" style="white-space:nowrap">${v.estado === "descartada" ? '<span class="chip plain" style="--c:var(--muted)">Anulada</span>' : v.exportadaEn ? `<span class="chip plain" style="--c:var(--ok)">Enviada ${fmtF(v.exportadaEn)}</span>` : '<span class="chip plain" style="--c:var(--soon)">Para enviar</span>'}${S.canWrite && v.estado === "pendiente" && !v.exportadaEn ? ` <button class="btn sm" data-act="anular-venta-cel" data-id="${v.id}">Anular</button>` : ""}</td></tr>`).join("")}</tbody></table></div>${V.some((v) => v.exportadaEn) && S.canWrite ? `<div style="margin-top:8px"><button class="btn sm" data-act="limpiar-enviadas">Borrar de este celular las ya enviadas</button></div>` : ""}` : `<div class="panel empty"><strong>Sin ventas todavía</strong>Tocá “+ Nueva venta”. Al final del día, “Enviar a la compu”.</div>`;
+      return h;
+    }
+    const rev = V.filter((v) => v.estado === "pendiente");
+    h += `<h2 class="sec">Entre la compu y los celulares</h2><div class="panel card"><div class="row" style="gap:8px;flex-wrap:wrap">${S.canWrite ? `<button class="btn" data-act="recibir-ventas">Recibir ventas de un celular</button>` : ""}<button class="btn" data-act="mandar-lista">Mandar lista al celu</button></div><p class="small muted" style="margin:0">La lista lleva las cervezas con stock, los precios y los clientes, para que el celular venda con los mismos nombres.</p></div>`;
+    if (rev.length) h += `<div class="row between" style="margin:26px 0 10px"><h2 class="sec" style="margin:0">Por revisar</h2><span class="chip plain" style="--c:var(--warn)">${rev.length}</span></div><div class="panel tbl"><table><tbody>${rev.map((v) => `<tr><td class="small">${esc(ventaTxt(v))}${v.vendedor ? `<div class="muted">de ${esc(v.vendedor)}</div>` : ""}<div style="color:var(--warn)">Hay ${fmtN(stockPara(v))} en stock para esta cerveza y formato.</div></td><td class="r" style="white-space:nowrap">${S.canWrite ? `<button class="btn sm" data-act="aplicar-venta" data-id="${v.id}">Aplicar</button> <button class="btn sm" data-act="descartar-venta" data-id="${v.id}">Descartar</button>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
+    const ap = V.filter((v) => v.estado === "aplicada").slice(0, 15);
+    if (ap.length) h += `<h2 class="sec">Últimas ventas rápidas</h2><div class="panel tbl"><table><tbody>${ap.map((v) => `<tr><td class="small">${esc(ventaTxt(v))}${v.vendedor ? ` <span class="muted">· ${esc(v.vendedor)}</span>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
+    return h;
+  }
+  function sheetVentaRapida() {
+    const rol = rolVenta(), I = itemsVenta(), CL = clientesVenta();
+    openSheet("Nueva venta", `<form class="stack" id="f">
+    <label class="f" for="vr-p">Qué vendés<select id="vr-p">${I.map((it, i) => `<option value="${i}">${esc(itemTxt(it))}${it.disp != null ? ` (hay ${fmtN(it.disp)})` : ""}</option>`).join("")}${rol === "celu" ? `<option value="otra" ${I.length ? "" : "selected"}>Otra: escribirla</option>` : ""}</select>${rol === "principal" && !I.length ? '<span class="h" style="color:var(--warn)">No hay latas ni envases en stock para vender.</span>' : ""}</label>
+    <div class="grid3" id="vr-otra" hidden><label class="f" for="vr-est">Cerveza<input id="vr-est" placeholder="IPA"></label><label class="f" for="vr-env">Envase<input id="vr-env" value="Lata"></label><label class="f" for="vr-med">Medida (ml)<input id="vr-med" type="number" min="0" step="any" value="473" inputmode="decimal"></label></div>
+    <div class="grid2"><label class="f" for="vr-n">Cantidad<input id="vr-n" type="number" min="1" step="1" required inputmode="numeric"></label><label class="f" for="vr-pr">Precio por unidad ($)<input id="vr-pr" type="number" min="0" step="any" inputmode="decimal" placeholder="Sin precio"></label></div>
+    <label class="f" for="vr-c">Cliente<input id="vr-c" list="vr-cl" placeholder="Vacío = Mostrador" autocomplete="off"><datalist id="vr-cl">${CL.map((c) => `<option value="${esc(c.nombre)}"></option>`).join("")}</datalist></label>
+    <div class="note row between"><span>Total</span><strong class="num" id="vr-tot">—</strong></div>
+    <div class="grid2"><label class="f" for="vr-pg">Pago<select id="vr-pg"><option value="pagado">Pagó ahora</option><option value="pendiente">Queda debiendo</option></select></label><label class="f" for="vr-m" id="vr-mw">Medio<select id="vr-m">${MEDIOS.map((m) => `<option>${m}</option>`).join("")}</select></label></div>
+    <label class="f" for="vr-f">Fecha<input id="vr-f" type="date" value="${hoy()}" max="${hoy()}" style="max-width:200px"></label>
+    <button class="btn pri" type="submit">Guardar venta</button></form>`, () => {
+      let prTocado = false;
+      const it = () => val("vr-p") === "otra" || val("vr-p") === "" ? null : I[+val("vr-p")];
+      const upd = (e) => {
+        if (e && e.target.id === "vr-pr") prTocado = true;
+        const x = it();
+        $("#vr-otra").hidden = !!x || (rol === "principal");
+        if (e && e.target.id === "vr-p" || !e) { if (!prTocado) $("#vr-pr").value = x && x.precio ? x.precio : ""; }
+        const n = +val("vr-n") || 0, pr = +val("vr-pr") || 0;
+        $("#vr-tot").textContent = n && pr ? fmt$(n * pr) : "—";
+        $("#vr-mw").hidden = val("vr-pg") !== "pagado" || !(pr > 0);
+      };
+      $("#f").addEventListener("input", upd);
+      $("#f").addEventListener("change", upd);
+      upd();
+      submitOnce($("#f"), () => {
+        const x = it(), n = Math.floor(+val("vr-n")), pr = +val("vr-pr") || 0, cn = val("vr-c");
+        const v = x ? { estilo: x.estilo, tipoId: x.tipoId || null, tipoNombre: x.tipoNombre, unidad: x.unidad || "ml", medida: Number(x.medida) } : { estilo: capi(val("vr-est")), tipoId: null, tipoNombre: val("vr-env") || "Lata", unidad: "ml", medida: +val("vr-med") || 0 };
+        if (!x && (rol === "principal" || !val("vr-est") || !(v.medida > 0))) { toast(rol === "principal" ? "Elegí qué vendés." : "Escribí la cerveza y la medida."); return false; }
+        if (!(n > 0)) { toast("Poné la cantidad."); return false; }
+        if (x && x.disp != null && rol === "principal" && n > x.disp) { toast(`Hay ${fmtN(x.disp)} disponibles.`); return false; }
+        if (val("vr-pg") === "pendiente" && !cn) { toast("Para que quede debiendo, poné el cliente."); return false; }
+        const cl = CL.find((c) => nrm(c.nombre) === nrm(cn));
+        Object.assign(v, { vid: "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), t: new Date().toISOString(), fecha: val("vr-f") || hoy(), vendedor: vendedorNom() || null, cantidad: n, clienteId: cl ? cl.id : null, clienteNombre: cl ? cl.nombre : cn || null, destino: cn ? null : "Mostrador", precio: pr || null, total: Math.round(n * pr * 100) / 100 || null, pago: pr > 0 ? val("vr-pg") : null, medio: val("vr-pg") === "pagado" && pr > 0 ? val("vr-m") : null, estado: "pendiente", por: S.uid });
+        return W(async () => {
+          const ref = await db.collection("ventascel").add(v);
+          v.id = ref.id;
+          let ok = false;
+          if (rol === "principal") ok = await aplicarVenta(v);
+          closeSheet();
+          toast(rol === "principal" ? ok ? "Venta guardada y descontada del stock" : "Venta guardada: quedó por revisar" : "Venta guardada en el celular");
+        });
+      });
+    });
+  }
+  function sheetTexto(titulo, intro, texto) {
+    openSheet(titulo, `<div class="stack"><p class="small" style="margin:0">${intro}</p><textarea id="tx-t" readonly rows="8" style="width:100%;font-family:var(--mono,monospace);font-size:12px">${esc(texto)}</textarea><div class="row" style="gap:8px">${navigator.share ? '<button class="btn pri" id="tx-sh">Compartir (WhatsApp, mail…)</button>' : ""}<button class="btn ${navigator.share ? "" : "pri"}" id="tx-cp">Copiar</button></div></div>`, () => {
+      const sh = $("#tx-sh");
+      if (sh) sh.addEventListener("click", () => { navigator.share({ text: texto }).catch(() => {}); });
+      $("#tx-cp").addEventListener("click", () => {
+        const ta = $("#tx-t");
+        const ok = () => toast("Copiado: pegalo en WhatsApp o en un mail");
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto).then(ok, () => { ta.select(); try { document.execCommand("copy"); ok(); } catch (e) { toast("Seleccioná el texto y copialo."); } });
+        else { ta.select(); try { document.execCommand("copy"); ok(); } catch (e) { toast("Seleccioná el texto y copialo."); } }
+      });
+    });
+  }
+  function leerPaquete(txt, kind) {
+    const a = txt.indexOf("{"), b = txt.lastIndexOf("}");
+    if (a < 0 || b < a) return null;
+    try { const o = JSON.parse(txt.slice(a, b + 1)); return o && o.kind === kind ? o : null; } catch (e) { return null; }
+  }
+  function sheetPegar(titulo, intro, kind, fn) {
+    openSheet(titulo, `<form class="stack" id="f"><p class="small" style="margin:0">${intro}</p><textarea id="pg-t" rows="7" style="width:100%;font-size:13px" placeholder="Pegá acá el mensaje completo"></textarea><label class="small" for="pg-file" style="cursor:pointer">…o elegí el archivo: <input id="pg-file" type="file" accept=".txt,.json,text/plain,application/json"></label><button class="btn pri" type="submit">Cargar</button></form>`, () => {
+      $("#pg-file").addEventListener("change", (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        const fr = new FileReader();
+        fr.onload = () => { $("#pg-t").value = String(fr.result || ""); };
+        fr.readAsText(f);
+      });
+      submitOnce($("#f"), () => {
+        const o = leerPaquete(val("pg-t"), kind);
+        if (!o) { toast("No reconozco ese mensaje. Pegalo completo, desde el principio hasta el final."); return false; }
+        return fn(o);
+      });
+    });
+  }
+  function mandarLista() {
+    const I = catalogoLocal().map((it) => ({ estilo: it.estilo, tipoId: it.tipoId, tipoNombre: it.tipoNombre, unidad: it.unidad, medida: it.medida, precio: it.precio, disp: it.disp }));
+    if (!I.length) { toast("No hay latas ni envases en stock para mandar."); return; }
+    const o = { kind: "cb-lista", v: 1, gen: hoy(), items: I.map((it) => Object.assign({}, it, { disp: null })), clientes: byName(S.clientes).map((c) => ({ id: c.id, nombre: c.nombre })) };
+    const link = /^https?:/.test(location.protocol) ? location.href.split("#")[0] + "#venta" : "";
+    const txt = `📋 Lista para vender · ${fmtF(hoy())}\n` + I.map((it) => `• ${itemTxt(it)}${it.precio ? " · " + fmt$(it.precio) : ""} (hay ${fmtN(it.disp)})`).join("\n") + `\n${o.clientes.length} clientes\n\nPara cargarla en el celular: ${link ? "abrí " + link + " → " : "en Control de Barriles → "}📱 Venta rápida → Cargar lista, y pegá este mensaje completo.\n\n` + JSON.stringify(o);
+    sheetTexto("Mandar lista al celu", "Mandá este mensaje al celular que va a vender (por WhatsApp o mail). Lleva cervezas, precios y clientes.", txt);
+  }
+  function enviarVentas() {
+    const P = S.ventascel.filter((v) => v.estado === "pendiente").sort((a, b) => String(a.t).localeCompare(String(b.t)));
+    if (!P.length) { toast("No hay ventas para enviar."); return; }
+    const F = ["vid", "t", "fecha", "vendedor", "estilo", "tipoId", "tipoNombre", "unidad", "medida", "cantidad", "clienteId", "clienteNombre", "destino", "precio", "total", "pago", "medio"];
+    const o = { kind: "cb-ventas", v: 1, gen: new Date().toISOString(), vendedor: vendedorNom() || null, ventas: P.map((v) => { const x = {}; F.forEach((k) => { if (v[k] != null) x[k] = v[k]; }); return x; }) };
+    const tot = P.reduce((s, v) => s + (Number(v.total) || 0), 0);
+    const txt = `📱 Ventas${o.vendedor ? " de " + o.vendedor : ""} · ${fmtF(hoy())}\n${P.length} venta${P.length === 1 ? "" : "s"} · ${fmt$(tot)}\n` + P.map((v) => "• " + ventaTxt(v)).join("\n") + `\n\nPara pasarlas: en la compu, Control de Barriles → 📱 Venta rápida → Recibir ventas, y pegá este mensaje completo. Si llega dos veces, no se duplica.\n\n` + JSON.stringify(o);
+    sheetTexto("Enviar ventas a la compu", "Mandá este mensaje a la compu principal (por WhatsApp o mail). Quedan marcadas como enviadas.", txt);
+    if (S.canWrite) W(async () => { const now = new Date().toISOString(); for (const v of P) if (!v.exportadaEn) await db.doc("ventascel/" + v.id).update({ exportadaEn: now }); });
+  }
+  async function recibirVentas(o) {
+    const ya = new Set(S.ventascel.map((v) => v.vid));
+    let nuevas = 0, apl = 0, rev = 0, rep = 0;
+    const C = {};
+    const ok = await W(async () => {
+      for (const v0 of o.ventas || []) {
+        if (!v0 || !v0.vid || !(v0.cantidad > 0)) continue;
+        if (ya.has(v0.vid)) { rep++; continue; }
+        ya.add(v0.vid);
+        const v = Object.assign({}, v0, { vendedor: v0.vendedor || o.vendedor || null, estado: "pendiente", recibidaEn: new Date().toISOString(), por: S.uid });
+        v.id = (await db.collection("ventascel").add(v)).id;
+        nuevas++;
+        if (await aplicarVenta(v, C)) apl++; else rev++;
+      }
+    });
+    if (!ok) return false;
+    closeSheet();
+    toast(`Recibidas ${nuevas}: ${apl} descontadas del stock${rev ? `, ${rev} por revisar` : ""}${rep ? ` · ${rep} ya estaban` : ""}`);
+    return true;
+  }
   const bajoMin = (i, r) => Number(i.minimo) > 0 && r.stock < Number(i.minimo);
   function provResumen(pid, I) {
     var _a;
@@ -1347,7 +1573,7 @@ const CATEMO = { Malta: "🌾", "Lúpulo": "🌿", Levadura: "🧫", Adjunto: "�
     <div class="grid2"><label class="f" for="co-p">Proveedor<input id="co-p" list="co-pl" placeholder="Elegí o escribí uno nuevo" autocomplete="off"><datalist id="co-pl">${byName(S.proveedores).map((p) => `<option value="${esc(p.nombre)}"></option>`).join("")}</datalist><span class="h">Si escribís uno nuevo, se agrega solo.</span></label>
     <label class="f" for="co-f">Fecha<input id="co-f" type="date" value="${hoy()}" max="${hoy()}"></label></div>
     <label class="f" for="co-fa">Factura o remito (opcional)<input id="co-fa" placeholder="Ej.: A-0001-00012345"></label>
-    <div class="grid2"><label class="f" for="co-pg">Pago<select id="co-pg"><option value="pagado">Ya la pagué</option><option value="pendiente">Queda a pagar</option></select><span class="h">Si queda a pagar, se suma a lo que le debés al proveedor.</span></label><label class="f" for="co-v" id="co-vw" hidden>Vence (opcional)<input id="co-v" type="date"></label></div>
+    <div class="grid2" ${mod("apagar") ? "" : "hidden"}><label class="f" for="co-pg">Pago<select id="co-pg"><option value="pagado">Ya la pagué</option><option value="pendiente">Queda a pagar</option></select><span class="h">Si queda a pagar, se suma a lo que le debés al proveedor.</span></label><label class="f" for="co-v" id="co-vw" hidden>Vence (opcional)<input id="co-v" type="date"></label></div>
     <div><h3 class="lbl">Qué compraste</h3><div id="co-items" class="stack" style="gap:10px"></div><button type="button" class="btn sm" id="co-add" style="margin-top:8px">+ Otro insumo</button></div>
     <div class="note row between"><span>Total</span><strong class="num" id="co-tot">$ 0</strong></div>
     <label class="f" for="co-no">Notas<input id="co-no"></label>
@@ -4256,6 +4482,39 @@ function nuevoInsumoInline(row,selCls,after){
       case "anular-pago":
         sheetAnularPago(id);
         break;
+      case "venta-rapida":
+        sheetVentaRapida();
+        break;
+      case "mandar-lista":
+        mandarLista();
+        break;
+      case "enviar-ventas":
+        enviarVentas();
+        break;
+      case "cargar-lista":
+        sheetPegar("Cargar lista de la compu", "Pegá el mensaje “Lista para vender” que te mandaron desde la compu.", "cb-lista", (o) => {
+          lsSet("cb-catalogo", JSON.stringify(o));
+          closeSheet();
+          render();
+          toast(`Lista cargada: ${o.items.length} producto${o.items.length === 1 ? "" : "s"} y ${(o.clientes || []).length} clientes`);
+          return true;
+        });
+        break;
+      case "recibir-ventas":
+        sheetPegar("Recibir ventas de un celular", "Pegá el mensaje “Ventas…” que te mandaron desde el celular. Si llega dos veces, no se duplica.", "cb-ventas", recibirVentas);
+        break;
+      case "aplicar-venta": {
+        const v = S.ventascel.find((z) => z.id === id);
+        if (v) W(async () => { toast(await aplicarVenta(v) ? "Venta descontada del stock" : `Todavía no alcanza: hay ${fmtN(stockPara(v))}.`); });
+        break;
+      }
+      case "descartar-venta":
+      case "anular-venta-cel":
+        if (confirm(act === "descartar-venta" ? "¿Descartar esta venta? No se descuenta del stock." : "¿Anular esta venta? No se va a enviar a la compu.")) W(async () => { await db.doc("ventascel/" + id).update({ estado: "descartada", descartadaEn: new Date().toISOString() }); toast("Venta anulada"); });
+        break;
+      case "limpiar-enviadas":
+        if (confirm("¿Borrar de este celular las ventas ya enviadas? Asegurate de que la compu las haya recibido.")) W(async () => { for (const v of S.ventascel.filter((z) => z.exportadaEn || z.estado === "descartada")) await db.doc("ventascel/" + v.id).delete(); toast("Listo"); });
+        break;
       case "facturar":
         sheetFacturar(id, +a.dataset.i);
         break;
@@ -4305,7 +4564,7 @@ function nuevoInsumoInline(row,selCls,after){
         sheetAnularSalida(id, +a.dataset.i);
         break;
       case "guardar-modulos": {
-        const b = document.getElementById("md-b").checked, l = document.getElementById("md-l").checked, i = document.getElementById("md-i").checked, rc = document.getElementById("md-r").checked;
+        const b = document.getElementById("md-b").checked, l = document.getElementById("md-l").checked, i = document.getElementById("md-i").checked, rc = document.getElementById("md-r").checked, ap = document.getElementById("md-p").checked, vc = document.getElementById("md-v").checked;
         if (!b && !l) {
           toast("Dejá activados barriles o latas: al menos una forma de envasar.");
           break;
@@ -4319,11 +4578,19 @@ function nuevoInsumoInline(row,selCls,after){
           const nd = S.lotes.reduce((s2, x) => s2 + (Number(x.disponibles) || 0), 0);
           if (nd > 0) av.push(`Latas: quedan ${fmtN(nd)} unidades en stock que no vas a ver ni poder vender.`);
         }
+        if (!ap && mod("apagar")) {
+          const dd = S.proveedores.reduce((s2, p) => s2 + Math.max(0, provSaldo(p.id).saldo), 0);
+          if (dd > 0.5) av.push(`Cuentas a pagar: debés ${fmt$(dd)} a proveedores. Se sigue viendo en Resumen y podés registrar los pagos.`);
+        }
+        if (!vc && modOn("ventacel")) {
+          const nr = S.ventascel.filter((v) => v.estado === "pendiente").length;
+          if (nr) av.push(`Venta rápida: hay ${nr} venta${nr > 1 ? "s" : ""} por revisar que no se van a ver.`);
+        }
         if (!i && mod("insumos")) av.push("Insumos: mientras esté apagado, al cocinar y envasar no se descuenta nada, y el stock de insumos puede quedar desfasado si después lo volvés a prender.");
         if (av.length && !confirm("Antes de ocultar:\n\n" + av.join("\n\n") + "\n\nNo se borra nada: lo que debés y te deben se sigue viendo en Resumen. ¿Ocultar igual?")) break;
         W(async () => {
-          await db.doc("config/general").set({ ...S.config, modulos: { barriles: b, latas: l, insumos: i, recetas: rc } });
-          toast("Guardado: " + [b && "barriles", l && "latas", i && "insumos", rc && "recetas"].filter(Boolean).join(", "));
+          await db.doc("config/general").set({ ...S.config, modulos: { ...S.config.modulos || {}, barriles: b, latas: l, insumos: i, recetas: rc, apagar: ap, ventacel: vc } });
+          toast("Guardado: " + [b && "barriles", l && "latas", i && "insumos", rc && "recetas", ap && "cuentas a pagar", vc && "venta rápida"].filter(Boolean).join(", "));
         });
         break;
       }
@@ -4450,6 +4717,20 @@ function nuevoInsumoInline(row,selCls,after){
       }
       document.documentElement.setAttribute("data-theme", v === "claro" ? "light" : "dark");
       toast(v === "claro" ? "Modo claro" : "Modo oscuro");
+    }
+    if (ev.target.id === "vr-rol") {
+      lsSet("cb-rol-venta", ev.target.value);
+      if (ev.target.value === "principal") lsSet("cb-solo-venta", null);
+      render();
+      toast(ev.target.value === "celu" ? "Este aparato queda como celular de venta" : "Este aparato queda como la principal");
+    }
+    if (ev.target.id === "vr-ven") {
+      lsSet("cb-vendedor", ev.target.value.trim() || null);
+      toast("Nombre guardado");
+    }
+    if (ev.target.id === "vr-solo") {
+      lsSet("cb-solo-venta", ev.target.checked ? "1" : null);
+      render();
     }
     if (ev.target.id === "fac-u") {
       const v = ev.target.value === "si";
