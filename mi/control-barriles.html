@@ -3097,6 +3097,7 @@ function nuevoInsumoInline(row,selCls,after){
     <label class="f" for="ev-f">Fecha de envasado<input id="ev-f" type="date" value="${hoy()}" max="${hoy()}" style="max-width:200px"></label>
     <div ${mod("barriles") ? "" : "hidden"}><h3 class="lbl">Barriles limpios para llenar (${limpios.length})</h3>${conProb.length ? `<p class="small" style="color:var(--warn);margin:0 0 8px">No se ofrecen por problema reportado: ${esc(conProb.map((e) => e.codigo).join(", "))}</p>` : ""}${limpios.length ? Object.entries(grupos).map(([k, L], gi) => `<div style="margin-bottom:10px"><div class="row between small" style="margin-bottom:6px"><strong>${esc(k)}</strong><button type="button" class="btn sm" data-g="${gi}">Todos (${L.length})</button></div><div class="picks" data-grp="${gi}">${L.map((e) => `<label class="pick"><input type="checkbox" value="${e.id}"><span>${esc(e.codigo)}</span></label>`).join("")}</div></div>`).join("") : `<p class="muted small" style="margin:0">No hay barriles limpios${S.envases.filter((e) => e.estado === "sucio").length ? ` (hay ${S.envases.filter((e) => e.estado === "sucio").length} para lavar)` : ""}. Solo podés envasar latas.</p>`}</div>
     ${D.stockT.length ? `<div><h3 class="lbl">Latas y otros</h3><div id="ev-rows" class="stack" style="gap:8px"></div><button type="button" class="btn sm" id="ev-add" style="margin-top:8px">+ Agregar formato</button></div>` : ""}
+    ${D.stockT.length && mod("insumos") && S.insumos.length ? '<div id="ev-mat" class="stack" style="gap:8px"></div>' : ""}
     <div class="note" id="ev-tot"></div>
     <div id="ev-fin" class="stack" style="gap:6px" hidden><h3 class="lbl" style="margin:0">Lo que queda en el fermentador</h3><div class="seg">
       <label><input type="radio" name="evfin" value="sigue"><span><strong>Sigue en el fermentador</strong><br><span class="small muted" id="ev-fin-a"></span></span></label>
@@ -3142,6 +3143,71 @@ function nuevoInsumoInline(row,selCls,after){
         sync();
       };
       const filas = () => [...root.querySelectorAll(".ev-row")].map((r) => ({ tipoId: r.querySelector(".evr-t").value, medida: +r.querySelector(".evr-m").value, cant: Math.floor(+r.querySelector(".evr-n").value) })).filter((r) => r.medida > 0 && r.cant > 0);
+      const mat = {};
+      const matKey = (r) => r.tipoId + "|" + r.medida;
+      const matDe = (r) => {
+        const k = matKey(r);
+        if (!mat[k]) {
+          const tt = D.T[r.tipoId], g = tt && tt.materiales && tt.materiales[String(r.medida)];
+          mat[k] = g ? g.map((x) => ({ insumoId: x.insumoId, por: x.por })) : [];
+        }
+        return mat[k];
+      };
+      let matSig = null;
+      const matGrupos = () => {
+        const G = {};
+        filas().forEach((r) => {
+          const k = matKey(r);
+          if (!G[k]) G[k] = { k, tipoId: r.tipoId, medida: r.medida, cant: 0 };
+          G[k].cant += r.cant;
+        });
+        return Object.values(G);
+      };
+      const matTot = (row, g, x) => {
+        const R0 = insCalc(), i = S.insumos.find((z) => z.id === x.insumoId), need = g.cant * (Number(x.por) || 0), st = i && R0[i.id] ? R0[i.id].stock : null;
+        const el = row.querySelector(".mat-tot");
+        if (!i || !(need > 0)) { el.textContent = ""; el.style.color = ""; return; }
+        el.textContent = `Se descuentan ${fmtN(need)} ${uTxt(i.unidad)} · hay ${fmtN(st)}`;
+        el.style.color = st != null && st < need ? "var(--warn)" : "";
+      };
+      const pintaMat = (force) => {
+        const box = $("#ev-mat");
+        if (!box) return;
+        const G = matGrupos();
+        const sig = G.map((g) => g.k + ":" + g.cant + ":" + matDe(g).length).join(",");
+        if (!force && sig === matSig) return;
+        matSig = sig;
+        if (!G.length) { box.innerHTML = ""; return; }
+        box.innerHTML = `<h3 class="lbl" style="margin:0">Materiales que se descuentan del stock</h3>` + G.map((g) => {
+          const tt = D.T[g.tipoId], M = matDe(g);
+          return `<div class="panel" style="padding:10px"><div class="small" style="margin-bottom:6px"><strong>${esc((tt && tt.nombre) || "Envase")} ${esc(medTxt(tt, g.medida))}</strong> · ${fmtN(g.cant)} unidades</div>${M.length ? "" : `<p class="small muted" style="margin:0 0 6px">¿Qué usás por cada una? Lata vacía, tapa, etiqueta… Se recuerda para la próxima.</p>`}${M.map((x, j) => `<div class="mat-row" data-k="${esc(g.k)}" data-j="${j}" style="display:grid;grid-template-columns:minmax(0,1fr) 92px auto;gap:8px;align-items:end;margin-bottom:6px"><label class="f">Material<select class="mat-i">${insOpts(x.insumoId)}</select></label><label class="f">Por unidad<input class="mat-por" type="number" min="0" step="any" inputmode="decimal" value="${esc(x.por)}"></label><button type="button" class="btn sm mat-x" aria-label="Quitar">×</button><span class="h mat-tot" style="grid-column:1/-1;margin-top:-2px"></span></div>`).join("")}<button type="button" class="btn sm mat-add" data-k="${esc(g.k)}">+ Material</button></div>`;
+        }).join("");
+        box.querySelectorAll(".mat-row").forEach((row) => {
+          const g = G.find((z) => z.k === row.dataset.k);
+          matTot(row, g, mat[row.dataset.k][+row.dataset.j]);
+        });
+      };
+      if ($("#ev-mat")) {
+        const box = $("#ev-mat");
+        const rowOf = (el) => {
+          const row = el.closest(".mat-row");
+          return row ? { row, x: mat[row.dataset.k][+row.dataset.j], g: matGrupos().find((z) => z.k === row.dataset.k) } : null;
+        };
+        box.addEventListener("change", (e) => {
+          const o = rowOf(e.target);
+          if (o && e.target.matches(".mat-i")) { o.x.insumoId = e.target.value; matTot(o.row, o.g, o.x); }
+        });
+        box.addEventListener("input", (e) => {
+          const o = rowOf(e.target);
+          if (o && e.target.matches(".mat-por")) { o.x.por = +e.target.value || 0; matTot(o.row, o.g, o.x); }
+        });
+        box.addEventListener("click", (e) => {
+          const ad = e.target.closest(".mat-add");
+          if (ad) { mat[ad.dataset.k].push({ insumoId: "", por: 1 }); pintaMat(true); return; }
+          const x = e.target.closest(".mat-x");
+          if (x) { const row = x.closest(".mat-row"); mat[row.dataset.k].splice(+row.dataset.j, 1); pintaMat(true); }
+        });
+      }
       const elegidos = () => [...root.querySelectorAll(".picks input:checked")].map((x) => x.value);
       const saldoSel = () => {
         const v = val("ev-t");
@@ -3156,6 +3222,7 @@ function nuevoInsumoInline(row,selCls,after){
         if (e.target.name === "evfin") finTouched = true;
       });
       const tot = () => {
+        pintaMat(false);
         const ids = elegidos(), F = filas();
         const lb = ids.reduce((s, i) => s + litrosDe[i], 0), ll = F.reduce((s, r) => s + r.cant * litros(D.T[r.tipoId], r.medida), 0);
         const t = D.K[val("ev-t")];
@@ -3206,6 +3273,11 @@ function nuevoInsumoInline(row,selCls,after){
           toast("Elegí barriles o cargá una cantidad de latas.");
           return false;
         }
+        const matMal = F.some((r) => (mat[matKey(r)] || []).some((x) => (x.insumoId && !(x.por > 0)) || (!x.insumoId && x.por > 0)));
+        if (matMal) {
+          toast("Revisá los materiales: falta elegir el insumo o la cantidad por unidad.");
+          return false;
+        }
         const tId = await resolverCerveza("ev");
         if (!tId) return false;
         const DD = derive();
@@ -3214,8 +3286,20 @@ function nuevoInsumoInline(row,selCls,after){
             const e = S.envases.find((z) => z.id === id);
             if (e && e.estado === "limpio") await escribirAccion(e, "llenar", { tandaId: tId }, DD);
           }
+          const kk0 = S.tandas.find((z) => z.id === tId), Rc = insCalc(), now0 = (/* @__PURE__ */ new Date()).toISOString(), receta = {};
           for (const r of F) {
-            await db.collection("lotes").add({ tipoId: r.tipoId, medida: r.medida, cantidad: r.cant, disponibles: r.cant, tandaId: tId, fecha, salidas: [], por: S.uid, creado: (/* @__PURE__ */ new Date()).toISOString() });
+            const M = mat[matKey(r)] ? mat[matKey(r)].filter((x) => x.insumoId && x.por > 0) : null;
+            const cm = M && M.length ? Math.round(M.reduce((s2, x) => s2 + x.por * ((Rc[x.insumoId] || {}).avg || 0), 0) * 100) / 100 : null;
+            const ref = await db.collection("lotes").add({ tipoId: r.tipoId, medida: r.medida, cantidad: r.cant, disponibles: r.cant, tandaId: tId, fecha, salidas: [], materiales: M && M.length ? M.map((x) => ({ insumoId: x.insumoId, por: x.por })) : null, costoMat: cm, por: S.uid, creado: now0 });
+            if (M) {
+              const tt = D.T[r.tipoId];
+              for (const x of M) await db.collection("movins").add({ insumoId: x.insumoId, tipo: "envasado", cantidad: -Math.round(r.cant * x.por * 1e3) / 1e3, motivo: "Envasado " + ((kk0 && kk0.codigo) || "") + " · " + r.cant + " " + ((tt && tt.nombre) || "") + " " + medTxt(tt, r.medida), tandaId: tId, loteId: ref.id, fecha, t: now0, por: S.uid });
+              (receta[r.tipoId] = receta[r.tipoId] || {})[String(r.medida)] = M.map((x) => ({ insumoId: x.insumoId, por: x.por }));
+            }
+          }
+          for (const tid of Object.keys(receta)) {
+            const tt = S.tipos.find((z) => z.id === tid);
+            if (tt) await db.doc("tipos/" + tid).update({ materiales: Object.assign({}, tt.materiales || {}, receta[tid]) });
           }
           const cierra = (root.querySelector("input[name=evfin]:checked") || {}).value === "cierra" && restoCalc != null;
           if (cierra) await cerrarConResto(tId, restoCalc, "Resto al terminar el envasado (fondo)");
@@ -3246,6 +3330,7 @@ function nuevoInsumoInline(row,selCls,after){
     <label class="f" for="s-c">A dónde va<select id="s-c"><optgroup label="Sin cliente registrado">${DESTINOS.map((d) => `<option value="d:${d}">${d}</option>`).join("")}</optgroup>${S.clientes.length ? `<optgroup label="Clientes">${opts(byName(S.clientes))}</optgroup>` : ""}</select><span class="h">Si no sabés a quién, elegí el tipo de salida. Igual queda registrado por dónde salió cada parte del lote.</span></label>
     <div class="grid2"><label class="f" for="s-p">Precio por lata ($)<input id="s-p" type="number" min="0" step="any" inputmode="decimal" value="${precioLata((_b = D.K[l.tandaId]) == null ? void 0 : _b.estilo) || ""}" placeholder="Sin precio"><span class="h">Se propone el de Ajustes; cambialo si esta vez es distinto.</span></label>
     <div class="f" style="display:grid;gap:5px;font-weight:600;font-size:13.5px">Total<div class="bigcode" id="s-tot" style="font-size:22px">—</div></div></div>
+    <div class="small muted" id="s-gan" style="margin-top:-6px"></div>
     <div class="grid2"><label class="f" for="s-pg">Pago<select id="s-pg"><option value="pagado">Pagado ahora</option><option value="pendiente">Queda debiendo</option></select></label>
     <label class="f" for="s-m" id="s-mw">Medio de pago<select id="s-m">${MEDIOS.map((m) => `<option>${m}</option>`).join("")}</select></label></div>
     ${usaFactura() ? `<div class="grid2" id="s-faw"><label class="f" for="s-fa">Factura<select id="s-fa"><option value="no">Sin facturar todavía</option><option value="si">Facturada</option></select></label><label class="f" for="s-fn" id="s-fnw">Número de factura (opcional)<input id="s-fn" placeholder="Ej.: B-0002-00000123"></label></div>` : ""}
@@ -3253,6 +3338,8 @@ function nuevoInsumoInline(row,selCls,after){
       const upd = () => {
         const n = +val("s-n") || 0, pr = +val("s-p") || 0;
         $("#s-tot").textContent = n && pr ? fmt$(n * pr) : "—";
+        const cu = costoUnidad(l);
+        $("#s-gan").innerHTML = cu.tot > 0 ? `Costo por unidad ${fmtP(cu.tot)}${pr > 0 ? ` · te quedan <strong style="color:${pr - cu.tot < 0 ? "var(--warn)" : "var(--ok)"}">${fmtP(pr - cu.tot)}</strong> por unidad${n ? " (" + fmt$((pr - cu.tot) * n) + " en total)" : ""}` : ""}` : "";
         const sinCli = val("s-c").startsWith("d:");
         const pg = $("#s-pg");
         const cc = S.clientes.find((z) => z.id === val("s-c"));
@@ -3873,18 +3960,28 @@ function nuevoInsumoInline(row,selCls,after){
       });
     });
   }
+  function costoUnidad(l) {
+    const t = S.tipos.find((z) => z.id === l.tipoId), k = S.tandas.find((z) => z.id === l.tandaId);
+    const cl = k ? costoLitroTanda(k) : costoL();
+    const beer = litros(t, l.medida) * (Number(cl) || 0), env = Number(l.costoMat) || 0;
+    return { beer, env, tot: beer + env };
+  }
   function sheetVerLote(id) {
     const D = derive();
     const l = S.lotes.find((z) => z.id === id);
     if (!l) return;
     const t = D.T[l.tipoId], k = D.K[l.tandaId];
     const sal = (l.salidas || []).map((s, i) => ({ ...s, i })).reverse();
-    openSheet("Envasado", `<div class="stack"><div class="note"><span class="small muted">Código para marcar en las latas</span><div class="bigcode" style="font-size:24px">${esc(codLote(l, D))}</div></div><dl class="kv"><dt>Envase</dt><dd>${esc((t == null ? void 0 : t.nombre) || "")} ${esc(medTxt(t, l.medida))}</dd><dt>Cerveza</dt><dd>${k ? esc((k.estilo || "") + " · " + k.codigo) : "—"}</dd><dt>Fecha</dt><dd>${fmtF(l.fecha)}</dd><dt>Envasadas</dt><dd class="num">${fmtN(l.cantidad)}</dd><dt>Quedan</dt><dd class="num"><strong>${fmtN(l.disponibles)}</strong></dd></dl>
+    openSheet("Envasado", `<div class="stack"><div class="note"><span class="small muted">Código para marcar en las latas</span><div class="bigcode" style="font-size:24px">${esc(codLote(l, D))}</div></div><dl class="kv"><dt>Envase</dt><dd>${esc((t == null ? void 0 : t.nombre) || "")} ${esc(medTxt(t, l.medida))}</dd><dt>Cerveza</dt><dd>${k ? esc((k.estilo || "") + " · " + k.codigo) : "—"}</dd><dt>Fecha</dt><dd>${fmtF(l.fecha)}</dd><dt>Envasadas</dt><dd class="num">${fmtN(l.cantidad)}</dd><dt>Quedan</dt><dd class="num"><strong>${fmtN(l.disponibles)}</strong></dd>${(() => {
+      const cu = costoUnidad(l), I = by(S.insumos);
+      return (l.materiales && l.materiales.length ? `<dt>Materiales</dt><dd>${l.materiales.map((x) => esc((I[x.insumoId] && I[x.insumoId].nombre) || "?") + (x.por !== 1 ? " × " + fmtN(x.por) : "")).join(" · ")}</dd>` : "") + (cu.tot > 0 ? `<dt>Costo por unidad</dt><dd class="num"><strong>${fmtP(cu.tot)}</strong> <span class="muted small">(cerveza ${fmtP(cu.beer)}${cu.env ? " + envase " + fmtP(cu.env) : ""})</span></dd>` : "");
+    })()}</dl>
     <div><h3 class="lbl">Salidas</h3>${sal.length ? `<div class="hist">${sal.map((s) => `<div style="--c:${s.descarte ? "var(--warn)" : "var(--st-cliente)"}" class="${s.anulada ? "anu" : ""}"><strong class="num">${fmtN(s.cantidad)}</strong><span class="txt"> · ${s.devolucion ? `Devolución de ${esc(destTxt(s, D))}: ${esc(s.motivo || "")} · ${s.destinoFinal === "descarte" ? "descartadas" : "volvieron al stock"}` : s.descarte ? "Descarte: " + esc(s.motivo || "") : esc(destTxt(s, D))}${s.devolucion ? s.credito ? ` · crédito ${fmt$(s.credito)}` : "" : s.total ? ` · ${fmt$(s.total)} · ${s.pago === "pendiente" ? "a cobrar" : "pagado"}` : ""}${usaFactura() && s.total && !s.devolucion && !s.descarte ? s.facturada ? ` · 🧾 facturada${s.facturaNro ? " " + esc(s.facturaNro) : ""}` : " · sin facturar" : ""}</span>${S.canWrite && usaFactura() && s.total && !s.facturada && !s.anulada && !s.devolucion && !s.descarte ? `<button type="button" class="lnk" data-act="facturar" data-id="${l.id}" data-i="${s.i}">marcar facturada</button> ` : ""}${S.canWrite && !s.anulada && !s.descarte && !s.devolucion ? `<button type="button" class="lnk" data-act="anular-salida" data-id="${l.id}" data-i="${s.i}">anular</button>` : ""}<div class="muted small txt">${fmtF(s.fecha || s.t)}${s.por ? ` · <span data-uid="${esc(s.por)}"></span>` : ""}</div>${s.anulada ? `<div class="anu-note">Anulada: ${esc(s.anuladaMotivo || "")} · ${fmtFH(s.anuladaEn)}${s.anuladaPor ? ` por <span data-uid="${esc(s.anuladaPor)}"></span>` : ""}</div>` : ""}</div>`).join("")}</div>` : '<p class="muted small">Sin salidas todavía.</p>'}</div>
     ${S.canWrite ? `<div class="row between"><button class="btn" data-act="reclamo-lata" data-id="${l.id}" style="color:var(--warn)">Registrar reclamo o problema</button><button class="btn danger" id="lo-del">Eliminar envasado</button></div>` : ""}</div>`, (root) => {
       fillNames(root);
       const d = $("#lo-del");
       if (d) armDelete(d, async () => {
+        for (const m of S.movins.filter((z) => z.loteId === id && !z.anulado)) await db.doc("movins/" + m.id).update({ anulado: true, anuladoMotivo: "Se eliminó el envasado", anuladoEn: (/* @__PURE__ */ new Date()).toISOString(), anuladoPor: S.uid });
         await db.doc("lotes/" + id).delete();
         toast("Envasado eliminado");
       });
