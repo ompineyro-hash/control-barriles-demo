@@ -921,7 +921,7 @@ window.__cbSeed = function() {
     if (deu.length) {
       h += `<div class="row between" style="margin:26px 0 10px"><h2 class="sec" style="margin:0">💰 A cobrar</h2><span class="chip plain" style="--c:var(--warn)">${fmt$(deu.reduce((s, o) => s + o.x.saldo, 0))}</span></div><div class="panel tbl"><table><tbody>${deu.map((o) => `<tr><td><strong>${esc(o.c.nombre)}</strong></td><td class="small">${o.x.vencidaDias ? `<span class="chip plain" style="--c:var(--warn)">Vencida ${o.x.vencidaDias} d</span>` : o.x.plazoPago ? `<span class="muted">vence el ${fmtF(o.x.vence)}</span>` : `<span class="muted">desde ${fmtF(o.x.desde)}</span>`}</td><td class="r num"><strong>${fmt$(o.x.saldo)}</strong></td><td class="r">${S.canWrite ? `<button class="btn sm" data-act="registrar-pago" data-id="${o.c.id}">Registrar pago</button>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
     }
-    h += porFacturarHTML() + (mod("insumos") ? aPagarHTML() : "");
+    h += porFacturarHTML() + aPagarHTML();
     h += vPerdidas(30);
     return h;
   }
@@ -3182,7 +3182,7 @@ function nuevoInsumoInline(row,selCls,after){
   function etapaTxt(k) { var e = ETAPAS.find(function (x) { return x[0] === k; }); return e ? e[1] : k || ""; }
   function enEval(t) { return !!(t && t.incid && t.incid.estado === "evaluacion"); }
   function costoLitroTanda(t) {
-    var k = mod("insumos") ? coccionCosto(t, insCalc()) : null;
+    var k = cocsDe(t).length ? coccionCosto(t, insCalc()) : null;
     return k && k.porL ? k.porL : costoL();
   }
   function incidTxt(t) {
@@ -4541,6 +4541,17 @@ function nuevoInsumoInline(row,selCls,after){
           toast("Dejá activados barriles o latas: al menos una forma de envasar.");
           break;
         }
+        const av = [];
+        if (!b && mod("barriles")) {
+          const nc = S.envases.filter((e) => e.estado === "cliente").length, nl = S.envases.filter((e) => e.estado === "lleno").length;
+          if (nc || nl) av.push(`Barriles: ${nc ? nc + " en clientes" : ""}${nc && nl ? " y " : ""}${nl ? nl + " llenos" : ""}. No vas a ver sus plazos ni alertas de devolución.`);
+        }
+        if (!l && mod("latas")) {
+          const nd = S.lotes.reduce((s2, x) => s2 + (Number(x.disponibles) || 0), 0);
+          if (nd > 0) av.push(`Latas: quedan ${fmtN(nd)} unidades en stock que no vas a ver ni poder vender.`);
+        }
+        if (!i && mod("insumos")) av.push("Insumos: mientras esté apagado, al cocinar y envasar no se descuenta nada, y el stock de insumos puede quedar desfasado si después lo volvés a prender.");
+        if (av.length && !confirm("Antes de ocultar:\n\n" + av.join("\n\n") + "\n\nNo se borra nada: lo que debés y te deben se sigue viendo en Resumen. ¿Ocultar igual?")) break;
         W(async () => {
           await db.doc("config/general").set({ ...S.config, modulos: { barriles: b, latas: l, insumos: i, recetas: rc } });
           toast("Guardado: " + [b && "barriles", l && "latas", i && "insumos", rc && "recetas"].filter(Boolean).join(", "));
