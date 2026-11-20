@@ -322,6 +322,7 @@ window.__cbSeed = function() {
     k3: { fecha: D(35), proveedorId: "p3", factura: "B-0003-00001877", items: [{ insumoId: "i7", cantidad: 1e3, precio: 260, lote: null }, { insumoId: "i8", cantidad: 1e3, precio: 45, lote: null }, { insumoId: "i9", cantidad: 5, precio: 3500, lote: null }, { insumoId: "i10", cantidad: 20, precio: 4200, lote: null }], total: 406500, pago: "pendiente", vence: D(5), notas: "", t: T(35), por: by },
     k4: { fecha: D(8), proveedorId: "p1", factura: "A-0001-00004790", items: [{ insumoId: "i1", cantidad: 300, precio: 1950, lote: "MP-2410" }], total: 585e3, pago: "pendiente", vence: D(-22), notas: "Subió el precio", t: T(8), por: by }
   };
+  data.gastos = { g1: { t: T(18), fecha: D(18), categoria: "Alquiler", concepto: "Alquiler del galpón", monto: 6e4, medio: "Transferencia", por: by }, g2: { t: T(9), fecha: D(9), categoria: "Luz", monto: 25e3, medio: "Transferencia", por: by }, g3: { t: T(4), fecha: D(4), categoria: "Gas", monto: 15e3, medio: "Mercado Pago", por: by }, g4: { t: T(40), fecha: D(40), categoria: "Alquiler", concepto: "Alquiler del galpón", monto: 6e4, medio: "Transferencia", por: by }, g5: { t: T(38), fecha: D(38), categoria: "Luz", monto: 22e3, medio: "Transferencia", por: by } };
   data.pagosprov = { pp1: { t: T(3), fecha: D(3), proveedorId: "p1", monto: 2e5, medio: "Transferencia", nota: "A cuenta", por: by } };
   var CM = function(tid, cod, est, f, arr) {
     arr.forEach(function(x, n) {
@@ -418,7 +419,7 @@ window.__cbSeed = function() {
   if (!data.tipos || !Object.keys(data.tipos).length) {
     data = DEMO && window.__cbSeed ? window.__cbSeed() : base();
   }
-  if (DEMO && window.__cbSeed && !data._m20261119b) {
+  if (DEMO && window.__cbSeed && !data._m20261120) {
     try {
       var sd = window.__cbSeed();
       data._m20261118 = true;
@@ -432,7 +433,9 @@ window.__cbSeed = function() {
         if (c && c.pago == null && !c.anulada) { c.pago = sd.compras[k].pago; c.vence = sd.compras[k].vence; }
       });
       if (!data.pagosprov) data.pagosprov = sd.pagosprov;
+      data._m20261120 = true;
       if (!data._m20261119b) { data._m20261119b = true; data.config.general.modulos = Object.assign({}, data.config.general.modulos || {}); if (data.config.general.modulos.ventacel == null) data.config.general.modulos.ventacel = true; }
+      if (!data.gastos) data.gastos = sd.gastos;
       if (data.tipos && data.tipos.lata && !data.tipos.lata.materiales) data.tipos.lata.materiales = sd.tipos.lata.materiales;
       Object.keys(data.lotes || {}).forEach(function(k) {
         (data.lotes[k].salidas || []).forEach(function(x) {
@@ -607,7 +610,7 @@ window.__cbSeed = function() {
 (function() {
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const COLS = ["tipos", "envases", "clientes", "tandas", "lotes", "fermentadores", "cervezas", "perdidas", "incidentes", "pagos", "insumos", "proveedores", "compras", "movins", "recetas", "pagosprov", "ventascel"];
+  const COLS = ["tipos", "envases", "clientes", "tandas", "lotes", "fermentadores", "cervezas", "perdidas", "incidentes", "pagos", "insumos", "proveedores", "compras", "movins", "recetas", "pagosprov", "ventascel", "gastos"];
   const S = {
     tipos: [],
     envases: [],
@@ -626,6 +629,7 @@ window.__cbSeed = function() {
     recetas: [],
     pagosprov: [],
     ventascel: [],
+    gastos: [],
     config: { alertaDias: 30 },
     got: /* @__PURE__ */ new Set(),
     dbOk: null,
@@ -657,7 +661,7 @@ window.__cbSeed = function() {
   const ORDEN = ["limpio", "lleno", "cliente", "sucio", "baja"];
   const ACC = { sucio: [["lavar", "Marcar lavado"]], limpio: [["llenar", "Llenar"]], lleno: [["enviar", "Enviar a cliente"], ["asignar", "Asignar cerveza"]], cliente: [["recibir", "Recibir"]], baja: [] };
   const ACC_TXT = { crear: "Alta", lavar: "Lavado", llenar: "Llenado", enviar: "Enviado", recibir: "Recibido", corregir: "Estado corregido", asignar: "Cerveza asignada", anular: "Movimiento deshecho", problema: "Problema reportado", resuelto: "Problema resuelto" };
-  const TABS = [["fermentadores", "🧪 Fermentadores"], ["recetas", "📖 Recetas"], ["retornables", "🛢️ Retornables"], ["stock", "📦 Stock"], ["venta", "📱 Venta rápida"], ["insumos", "🧺 Insumos"], ["clientes", "🤝 Clientes"], ["resumen", "📊 Resumen"], ["ajustes", "⚙️ Ajustes"]];
+  const TABS = [["fermentadores", "🧪 Fermentadores"], ["recetas", "📖 Recetas"], ["retornables", "🛢️ Retornables"], ["stock", "📦 Stock"], ["venta", "📱 Venta rápida"], ["insumos", "🧺 Insumos"], ["resultado", "💵 Resultado"], ["clientes", "🤝 Clientes"], ["resumen", "📊 Resumen"], ["ajustes", "⚙️ Ajustes"]];
   const HMAX = 120;
   const MOTIVOS = ["Contaminación / infección", "Oxidación o sabor defectuoso", "Rotura, pérdida o derrame", "Vencida", "Error de proceso", "Otro"];
   const fmt$ = (n) => "$ " + Math.round(Number(n) || 0).toLocaleString("es-AR");
@@ -841,7 +845,7 @@ window.__cbSeed = function() {
     if (cur && cur.salida) out.push(cur);
     return out;
   }
-  const TABMOD = { retornables: "barriles", insumos: "insumos", recetas: "recetas" };
+  const TABMOD = { retornables: "barriles", insumos: "insumos", recetas: "recetas", resultado: "gastos" };
   const tabOn = (k) => soloVenta() ? k === "venta" : k === "venta" ? ventaOn() : !TABMOD[k] || mod(TABMOD[k]);
   function renderTabs() {
     if (!tabOn(S.tab)) S.tab = soloVenta() ? "venta" : "fermentadores";
@@ -849,7 +853,7 @@ window.__cbSeed = function() {
   }
   function vista(D) {
     let h = S.canWrite ? "" : `<div class="banner small">Estás en modo lectura: podés ver todo, pero no cargar ni cambiar datos.</div>`;
-    return h + (S.tab === "resumen" ? demoHTML() : "") + (S.tab === "venta" ? "" : alertasHTML(D)) + ({ venta: vVenta, resumen: vResumen, retornables: vRet, stock: vStock, clientes: vClientes, fermentadores: vFerm, ajustes: vAjustes, insumos: vInsumos, recetas: vRecetas }[S.tab] || vResumen)(D);
+    return h + (S.tab === "resumen" ? demoHTML() : "") + (S.tab === "venta" || S.tab === "resultado" ? "" : alertasHTML(D)) + ({ resultado: vResultado, venta: vVenta, resumen: vResumen, retornables: vRet, stock: vStock, clientes: vClientes, fermentadores: vFerm, ajustes: vAjustes, insumos: vInsumos, recetas: vRecetas }[S.tab] || vResumen)(D);
   }
   function render() {
     renderTabs();
@@ -1222,7 +1226,7 @@ window.__cbSeed = function() {
     return h + `<div class="panel tbl"><table><thead><tr><th>Carga</th><th>Cerveza</th><th>Envasado</th><th class="r">Litros</th><th></th></tr></thead><tbody>` + porFecha(S.tandas).map((t) => tandaRow(t, D)).join("") + `</tbody></table></div>`;
   }
   function modulosHTML(pre) {
-    return `<div class="seg"><label><input type="checkbox" id="${pre}-b" ${mod("barriles") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Barriles retornables</strong><br><span class="small muted">Cada barril con su código, ciclo, clientes y devolución.</span></span></label><label><input type="checkbox" id="${pre}-l" ${mod("latas") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Latas y otros por cantidad</strong><br><span class="small muted">Envasado por lote, stock, ventas y pagos.</span></span></label><label><input type="checkbox" id="${pre}-i" ${mod("insumos") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Insumos y compras</strong><br><span class="small muted">Stock de maltas, lúpulos, levaduras y envases vacíos, proveedores y costos.</span></span></label><label><input type="checkbox" id="${pre}-r" ${mod("recetas") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Recetas</strong><br><span class="small muted">Ingredientes, parámetros y costo de cada receta.</span></span></label>${pre === "md" ? `<label><input type="checkbox" id="md-p" ${mod("apagar") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Cuentas a pagar</strong><br><span class="small muted">Compras que quedan a pagar, pagos y lo que le debés a cada proveedor.</span></span></label><label><input type="checkbox" id="md-v" ${modOn("ventacel") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Venta rápida y celulares</strong><br><span class="small muted">Cargar ventas en segundos y recibir las de otros celulares.</span></span></label>` : ""}</div>`;
+    return `<div class="seg"><label><input type="checkbox" id="${pre}-b" ${mod("barriles") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Barriles retornables</strong><br><span class="small muted">Cada barril con su código, ciclo, clientes y devolución.</span></span></label><label><input type="checkbox" id="${pre}-l" ${mod("latas") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Latas y otros por cantidad</strong><br><span class="small muted">Envasado por lote, stock, ventas y pagos.</span></span></label><label><input type="checkbox" id="${pre}-i" ${mod("insumos") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Insumos y compras</strong><br><span class="small muted">Stock de maltas, lúpulos, levaduras y envases vacíos, proveedores y costos.</span></span></label><label><input type="checkbox" id="${pre}-r" ${mod("recetas") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Recetas</strong><br><span class="small muted">Ingredientes, parámetros y costo de cada receta.</span></span></label>${pre === "md" ? `<label><input type="checkbox" id="md-p" ${mod("apagar") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Cuentas a pagar</strong><br><span class="small muted">Compras que quedan a pagar, pagos y lo que le debés a cada proveedor.</span></span></label><label><input type="checkbox" id="md-g" ${mod("gastos") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Gastos y resultado</strong><br><span class="small muted">Luz, alquiler, sueldos… y cuánto ganaste en el mes.</span></span></label><label><input type="checkbox" id="md-v" ${modOn("ventacel") ? "checked" : ""} ${S.canWrite ? "" : "disabled"}><span><strong>Venta rápida y celulares</strong><br><span class="small muted">Cargar ventas en segundos y recibir las de otros celulares.</span></span></label>` : ""}</div>`;
   }
   function vAjustes(D) {
     var _a, _b;
@@ -1657,6 +1661,104 @@ const CATEMO = { Malta: "🌾", "Lúpulo": "🌿", Levadura: "🧫", Adjunto: "�
     closeSheet();
     toast(`Recibidas ${nuevas}: ${apl} descontadas del stock${rev ? `, ${rev} por revisar` : ""}${rep ? ` · ${rep} ya estaban` : ""}`);
     return true;
+  }
+  const GASCAT = ["Alquiler", "Luz", "Gas", "Agua", "Sueldos y changas", "Impuestos y tasas", "Mantenimiento", "Transporte y fletes", "Publicidad", "Servicios (internet, teléfono)", "Otros"];
+  const mesDe = (f) => String(f || "").slice(0, 7);
+  const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const mesCorto = (m) => { const p = String(m).split("-"); return p.length === 2 ? MESES.at(+p[1] - 1).slice(0, 3) + " " + p[0].slice(2) : m; };
+  const mesTxt = (m) => { const p = String(m).split("-"); return p.length === 2 ? MESES.at(+p[1] - 1) + " " + p[0] : m; };
+  const mesesAtras = (m, n) => { let [y, mm] = m.split("-").map(Number); const out = []; for (let i = 0; i < n; i++) { out.push(y + "-" + String(mm).padStart(2, "0")); mm--; if (!mm) { mm = 12; y--; } } return out; };
+  function resultadoMes(m) {
+    let ventas = 0, notas = 0, costo = 0, sinCosto = 0, unid = 0;
+    S.lotes.forEach((l) => {
+      let cu = null;
+      (l.salidas || []).forEach((x) => {
+        if (x.anulada || mesDe(x.fecha) !== m) return;
+        if (x.devolucion) { notas += Number(x.credito) || 0; return; }
+        if (x.descarte || !(Number(x.total) > 0)) return;
+        ventas += Number(x.total);
+        unid += Number(x.cantidad) || 0;
+        if (cu == null) cu = costoUnidad(l).tot;
+        if (cu > 0) costo += cu * Number(x.cantidad); else sinCosto++;
+      });
+    });
+    const G = S.gastos.filter((g) => !g.anulado && mesDe(g.fecha) === m);
+    const gastos = G.reduce((s, g) => s + (Number(g.monto) || 0), 0);
+    const porCat = {};
+    G.forEach((g) => { porCat[g.categoria || "Otros"] = (porCat[g.categoria || "Otros"] || 0) + (Number(g.monto) || 0); });
+    const cobros = S.pagos.filter((p) => !p.anulado && mesDe(p.fecha) === m).reduce((s, p) => s + (Number(p.monto) || 0), 0);
+    const compras = S.compras.filter((c) => !c.anulada && c.pago !== "pendiente" && mesDe(c.fecha) === m).reduce((s, c) => s + (Number(c.total) || 0), 0);
+    const pagProv = S.pagosprov.filter((p) => !p.anulado && mesDe(p.fecha) === m).reduce((s, p) => s + (Number(p.monto) || 0), 0);
+    const vendido = ventas - notas, resV = vendido - costo - gastos, caja = cobros - compras - pagProv - gastos;
+    return { m, ventas, notas, vendido, costo, sinCosto, unid, gastos, porCat, G, cobros, compras, pagProv, resV, caja };
+  }
+  const signo$ = (v) => `<span style="color:${v < -0.5 ? "var(--warn)" : "var(--ok)"}">${v < -0.5 ? "− " + fmt$(-v) : fmt$(v)}</span>`;
+  function vResultado(D) {
+    const hoyM = mesDe(hoy());
+    if (!S.mesRes) S.mesRes = hoyM;
+    const R = resultadoMes(S.mesRes);
+    const fila = (t, v, sub, neg) => `<tr><td>${t}${sub ? `<div class="muted small">${sub}</div>` : ""}</td><td class="r num" style="white-space:nowrap">${neg && v ? "− " : ""}${fmt$(v)}</td></tr>`;
+    let h = `<div class="row between" style="margin-top:18px;gap:8px;flex-wrap:wrap"><h2 class="sec" style="margin:0">Resultado del mes</h2><div class="row" style="gap:8px"><input type="month" id="res-m" value="${S.mesRes}" max="${hoyM}" style="max-width:170px">${S.canWrite ? `<button class="btn pri" data-act="nuevo-gasto">+ Gasto</button>` : ""}</div></div>
+  <p class="muted small" style="margin:6px 0 12px">Dos miradas del mismo mes. <strong>Por lo vendido</strong>: si el negocio gana plata, aunque te paguen después. <strong>Por la caja</strong>: cuánta plata entró y salió de verdad.</p>
+  <div class="grid2" style="align-items:start">
+  <div class="panel tbl"><table><thead><tr><th>Por lo vendido</th><th class="r">${esc(mesTxt(R.m))}</th></tr></thead><tbody>
+    ${fila("Ventas", R.ventas, R.unid ? fmtN(R.unid) + " unidades" : "")}${R.notas ? fila("Devoluciones con crédito", R.notas, "", true) : ""}
+    ${fila("Costo de lo vendido", R.costo, "cerveza + envase de cada unidad" + (R.sinCosto ? ` · <span style="color:var(--soon)">${R.sinCosto} venta${R.sinCosto > 1 ? "s" : ""} sin costo cargado</span>` : ""), true)}
+    ${fila("Gastos generales", R.gastos, "", true)}
+    <tr><td><strong>Resultado</strong></td><td class="r num"><strong>${signo$(R.resV)}</strong></td></tr></tbody></table></div>
+  <div class="panel tbl"><table><thead><tr><th>Por la caja</th><th class="r">${esc(mesTxt(R.m))}</th></tr></thead><tbody>
+    ${fila("Cobros", R.cobros, "lo que te pagaron los clientes y el mostrador")}
+    ${fila("Compras pagadas", R.compras, "compras de insumos pagadas al momento", true)}
+    ${fila("Pagos a proveedores", R.pagProv, "de compras que habían quedado a pagar", true)}
+    ${fila("Gastos generales", R.gastos, "", true)}
+    <tr><td><strong>Saldo de caja</strong></td><td class="r num"><strong>${signo$(R.caja)}</strong></td></tr></tbody></table></div></div>`;
+    const deu = S.clientes.reduce((s, c) => s + Math.max(0, cuentaDe(c.id).saldo), 0), debo = S.proveedores.reduce((s, p) => s + Math.max(0, provSaldo(p.id).saldo), 0);
+    if (deu > 0.5 || debo > 0.5) h += `<p class="small muted" style="margin:8px 2px 0">Hoy te deben ${fmt$(deu)} y vos debés ${fmt$(debo)} a proveedores: por eso las dos miradas no dan igual.</p>`;
+    h += `<div class="row between" style="margin:26px 0 10px"><h2 class="sec" style="margin:0">Gastos de ${esc(mesTxt(R.m))}</h2><span class="chip plain">${fmt$(R.gastos)}</span></div>`;
+    if (!R.G.length) h += `<div class="panel empty"><strong>Sin gastos cargados en este mes</strong>Cargá luz, gas, alquiler, sueldos… con “+ Gasto”. Las compras de insumos no van acá: ya se cargan en Insumos.</div>`;
+    else {
+      const cats = Object.entries(R.porCat).sort((a, b) => b[1] - a[1]);
+      h += `<div class="panel card"><div class="row" style="gap:6px;flex-wrap:wrap">${cats.map(([c, v]) => `<span class="chip plain">${esc(c)} · ${fmt$(v)}</span>`).join("")}</div></div>`;
+      h += `<div class="panel tbl" style="margin-top:10px"><table><tbody>${R.G.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))).map((g) => `<tr><td>${esc(g.categoria || "Otros")}<div class="muted small">${fmtF(g.fecha)}${g.concepto ? " · " + esc(g.concepto) : ""}</div></td><td class="r num" style="white-space:nowrap">${fmt$(g.monto)}</td><td class="r">${S.canWrite ? `<button class="btn sm" data-act="anular-gasto" data-id="${g.id}">Anular</button>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
+    }
+    const M = mesesAtras(hoyM, 6).map(resultadoMes).filter((x, i) => i === 0 || x.ventas || x.gastos || x.cobros || x.compras || x.pagProv);
+    if (M.length > 1) h += `<h2 class="sec">Últimos meses</h2><div class="panel tbl"><table class="small"><thead><tr><th>Mes</th><th class="r">Resultado</th><th class="r">Caja</th></tr></thead><tbody>${M.map((x) => `<tr><td style="white-space:nowrap"><button class="btn sm" data-act="ver-mes" data-id="${x.m}">${esc(mesCorto(x.m))}</button><div class="muted">vendido ${fmt$(x.vendido)}</div></td><td class="r num" style="white-space:nowrap">${signo$(x.resV)}</td><td class="r num" style="white-space:nowrap">${signo$(x.caja)}</td></tr>`).join("")}</tbody></table></div>`;
+    return h;
+  }
+  function sheetGasto() {
+    const ult = S.gastos.filter((g) => !g.anulado).sort((a, b) => String(b.t).localeCompare(String(a.t)))[0];
+    openSheet("Nuevo gasto", `<form class="stack" id="f">
+    <div class="grid2"><label class="f" for="ga-c">Tipo de gasto<select id="ga-c">${GASCAT.map((c) => `<option ${ult && ult.categoria === c ? "selected" : ""}>${c}</option>`).join("")}</select></label><label class="f" for="ga-m">Monto ($)<input id="ga-m" type="number" min="0" step="any" inputmode="decimal" required></label></div>
+    <label class="f" for="ga-d">Detalle (opcional)<input id="ga-d" placeholder="Ej.: factura de luz de octubre"></label>
+    <div class="grid2"><label class="f" for="ga-f">Fecha de pago<input id="ga-f" type="date" value="${hoy()}" max="${hoy()}"></label><label class="f" for="ga-me">Medio<select id="ga-me">${MEDIOS.map((m) => `<option>${m}</option>`).join("")}</select></label></div>
+    <p class="h" style="margin:0">Las compras de maltas, lúpulos, latas, etc. no van acá: se cargan en Insumos → Compras, así se suman al stock.</p>
+    <button class="btn pri" type="submit">Guardar gasto</button></form>`, () => {
+      submitOnce($("#f"), () => {
+        const m = +val("ga-m");
+        if (!(m > 0)) { toast("Poné el monto."); return false; }
+        return W(async () => {
+          await db.collection("gastos").add({ t: new Date().toISOString(), fecha: val("ga-f") || hoy(), categoria: val("ga-c"), concepto: val("ga-d") || null, monto: Math.round(m * 100) / 100, medio: val("ga-me"), por: S.uid });
+          S.mesRes = mesDe(val("ga-f") || hoy());
+          closeSheet();
+          toast("Gasto guardado: " + fmt$(m));
+        });
+      });
+    });
+  }
+  function sheetAnularGasto(id) {
+    const g = S.gastos.find((z) => z.id === id);
+    if (!g || g.anulado) return;
+    openSheet("Anular gasto", `<form class="stack" id="f"><div>${fmtF(g.fecha)} · ${esc(g.categoria)} · <strong>${fmt$(g.monto)}</strong></div><div class="note">Queda registrado como anulado, con el motivo, y deja de contar en el resultado.</div><label class="f" for="ag-m">Motivo (obligatorio)<input id="ag-m" required placeholder="Ej.: lo cargué dos veces"></label><button class="btn pri" type="submit">Anular gasto</button></form>`, () => {
+      submitOnce($("#f"), () => {
+        const m = val("ag-m");
+        if (!m) { toast("Escribí el motivo."); return false; }
+        return W(async () => {
+          await db.doc("gastos/" + id).update({ anulado: true, anuladoMotivo: m, anuladoEn: new Date().toISOString(), anuladoPor: S.uid });
+          closeSheet();
+          toast("Gasto anulado");
+        });
+      });
+    });
   }
   const bajoMin = (i, r) => Number(i.minimo) > 0 && r.stock < Number(i.minimo);
   function provResumen(pid, I) {
@@ -4714,6 +4816,17 @@ function nuevoInsumoInline(row,selCls,after){
       case "anular-pago":
         sheetAnularPago(id);
         break;
+      case "nuevo-gasto":
+        sheetGasto();
+        break;
+      case "anular-gasto":
+        sheetAnularGasto(id);
+        break;
+      case "ver-mes":
+        S.mesRes = id;
+        render();
+        window.scrollTo(0, 0);
+        break;
       case "venta-rapida":
         sheetVentaRapida();
         break;
@@ -4796,7 +4909,7 @@ function nuevoInsumoInline(row,selCls,after){
         sheetAnularSalida(id, +a.dataset.i);
         break;
       case "guardar-modulos": {
-        const b = document.getElementById("md-b").checked, l = document.getElementById("md-l").checked, i = document.getElementById("md-i").checked, rc = document.getElementById("md-r").checked, ap = document.getElementById("md-p").checked, vc = document.getElementById("md-v").checked;
+        const b = document.getElementById("md-b").checked, l = document.getElementById("md-l").checked, i = document.getElementById("md-i").checked, rc = document.getElementById("md-r").checked, ap = document.getElementById("md-p").checked, vc = document.getElementById("md-v").checked, gg = document.getElementById("md-g").checked;
         if (!b && !l) {
           toast("Dejá activados barriles o latas: al menos una forma de envasar.");
           break;
@@ -4821,8 +4934,8 @@ function nuevoInsumoInline(row,selCls,after){
         if (!i && mod("insumos")) av.push("Insumos: mientras esté apagado, al cocinar y envasar no se descuenta nada, y el stock de insumos puede quedar desfasado si después lo volvés a prender.");
         if (av.length && !confirm("Antes de ocultar:\n\n" + av.join("\n\n") + "\n\nNo se borra nada: lo que debés y te deben se sigue viendo en Resumen. ¿Ocultar igual?")) break;
         W(async () => {
-          await db.doc("config/general").set({ ...S.config, modulos: { ...S.config.modulos || {}, barriles: b, latas: l, insumos: i, recetas: rc, apagar: ap, ventacel: vc } });
-          toast("Guardado: " + [b && "barriles", l && "latas", i && "insumos", rc && "recetas", ap && "cuentas a pagar", vc && "venta rápida"].filter(Boolean).join(", "));
+          await db.doc("config/general").set({ ...S.config, modulos: { ...S.config.modulos || {}, barriles: b, latas: l, insumos: i, recetas: rc, apagar: ap, ventacel: vc, gastos: gg } });
+          toast("Guardado: " + [b && "barriles", l && "latas", i && "insumos", rc && "recetas", ap && "cuentas a pagar", gg && "gastos y resultado", vc && "venta rápida"].filter(Boolean).join(", "));
         });
         break;
       }
@@ -4949,6 +5062,9 @@ function nuevoInsumoInline(row,selCls,after){
       }
       document.documentElement.setAttribute("data-theme", v === "claro" ? "light" : "dark");
       toast(v === "claro" ? "Modo claro" : "Modo oscuro");
+    }
+    if (ev.target.id === "res-m") {
+      if (ev.target.value) { S.mesRes = ev.target.value; render(); }
     }
     if (ev.target.id === "vr-rol") {
       lsSet("cb-rol-venta", ev.target.value);
@@ -5080,6 +5196,7 @@ function nuevoInsumoInline(row,selCls,after){
 /* Novedades para testers */
 (function(){
 var NOV=[
+ {id:'2026-11-20',f:'20 nov',t:['Nueva pestaña 💵 Resultado: cargás los gastos generales (luz, alquiler, gas, sueldos…) y ves cuánto ganaste en el mes.','Muestra el mes de dos formas: por lo vendido (si el negocio gana plata, aunque te paguen después) y por la caja (cuánta plata entró y salió de verdad).','Abajo, los últimos meses para comparar. Se puede ocultar en Ajustes → Qué usás.']},
  {id:'2026-11-19b',f:'19 nov',t:['Nueva pestaña 📱 Venta rápida: cargás una venta en segundos (qué, cuánto, a quién, si pagó).','Sirve para vender desde el celular aunque los datos estén en la compu: el celular junta las ventas y las mandás por WhatsApp; la compu las recibe y las descuenta del stock solas, sin duplicar.','Desde la compu podés mandar al celular la lista de cervezas, precios y clientes. Para probarlo en el demo: en Venta rápida cambiá “Este aparato es…”.','En Ajustes → Qué usás se puede ocultar la Venta rápida y también las Cuentas a pagar. Antes de ocultar, la app avisa si queda algo pendiente.']},
  {id:'2026-11-19',f:'19 nov',t:['Al envasar latas, la app descuenta del stock de insumos lo que usás por cada una (lata vacía, tapa, etiqueta). La primera vez lo elegís y después lo recuerda.','Cada envasado muestra su costo por unidad: la cerveza más el envase.','Al registrar una venta ves cuánto te queda por lata después del costo.']},
  {id:'2026-11-18f',f:'18 nov',t:['Compras: al cargarla elegís si ya la pagaste o si queda a pagar (con fecha de vencimiento opcional).','En Insumos → Proveedores ves cuánto le debés a cada uno y registrás los pagos (en efectivo, transferencia, etc.).','En Resumen aparece la sección 💸 A pagar a proveedores, con las vencidas en rojo.']},
