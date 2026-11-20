@@ -322,6 +322,9 @@ window.__cbSeed = function() {
     k3: { fecha: D(35), proveedorId: "p3", factura: "B-0003-00001877", items: [{ insumoId: "i7", cantidad: 1e3, precio: 260, lote: null }, { insumoId: "i8", cantidad: 1e3, precio: 45, lote: null }, { insumoId: "i9", cantidad: 5, precio: 3500, lote: null }, { insumoId: "i10", cantidad: 20, precio: 4200, lote: null }], total: 406500, pago: "pendiente", vence: D(5), notas: "", t: T(35), por: by },
     k4: { fecha: D(8), proveedorId: "p1", factura: "A-0001-00004790", items: [{ insumoId: "i1", cantidad: 300, precio: 1950, lote: "MP-2410" }], total: 585e3, pago: "pendiente", vence: D(-22), notas: "Subió el precio", t: T(8), por: by }
   };
+  data.cargos = { cg1: { t: T(20), fecha: D(20), clienteId: "c_esq", envaseIds: ["eB001", "eB002"], tipo: "barril", concepto: "2 barriles de Golden (B-001, B-002) · 100 L a $ 5.000", monto: 5e5, ingreso: 5e5, litros: 100, modo: "litro", costo: 131900, por: by }, cg2: { t: T(20), fecha: D(20), clienteId: "c_esq", envaseIds: ["eB001", "eB002"], tipo: "deposito", concepto: "Depósito de 2 barriles (B-001, B-002)", monto: 6e4, ingreso: 0, por: by } };
+  data.envases.eB001.deposito = { monto: 3e4, clienteId: "c_esq" };
+  data.envases.eB002.deposito = { monto: 3e4, clienteId: "c_esq" };
   data.gastos = { g1: { t: T(18), fecha: D(18), categoria: "Alquiler", concepto: "Alquiler del galpón", monto: 6e4, medio: "Transferencia", por: by }, g2: { t: T(9), fecha: D(9), categoria: "Luz", monto: 25e3, medio: "Transferencia", por: by }, g3: { t: T(4), fecha: D(4), categoria: "Gas", monto: 15e3, medio: "Mercado Pago", por: by }, g4: { t: T(40), fecha: D(40), categoria: "Alquiler", concepto: "Alquiler del galpón", monto: 6e4, medio: "Transferencia", por: by }, g5: { t: T(38), fecha: D(38), categoria: "Luz", monto: 22e3, medio: "Transferencia", por: by } };
   data.pagosprov = { pp1: { t: T(3), fecha: D(3), proveedorId: "p1", monto: 2e5, medio: "Transferencia", nota: "A cuenta", por: by } };
   var CM = function(tid, cod, est, f, arr) {
@@ -419,7 +422,7 @@ window.__cbSeed = function() {
   if (!data.tipos || !Object.keys(data.tipos).length) {
     data = DEMO && window.__cbSeed ? window.__cbSeed() : base();
   }
-  if (DEMO && window.__cbSeed && !data._m20261120) {
+  if (DEMO && window.__cbSeed && !data._m20261120b) {
     try {
       var sd = window.__cbSeed();
       data._m20261118 = true;
@@ -434,8 +437,13 @@ window.__cbSeed = function() {
       });
       if (!data.pagosprov) data.pagosprov = sd.pagosprov;
       data._m20261120 = true;
+      data._m20261120b = true;
       if (!data._m20261119b) { data._m20261119b = true; data.config.general.modulos = Object.assign({}, data.config.general.modulos || {}); if (data.config.general.modulos.ventacel == null) data.config.general.modulos.ventacel = true; }
       if (!data.gastos) data.gastos = sd.gastos;
+      if (!data.cargos) {
+        data.cargos = sd.cargos;
+        ["eB001", "eB002"].forEach(function(k) { if (data.envases && data.envases[k] && data.envases[k].estado === "cliente" && data.envases[k].clienteId === "c_esq" && !data.envases[k].deposito) data.envases[k].deposito = sd.envases[k].deposito; });
+      }
       if (data.tipos && data.tipos.lata && !data.tipos.lata.materiales) data.tipos.lata.materiales = sd.tipos.lata.materiales;
       Object.keys(data.lotes || {}).forEach(function(k) {
         (data.lotes[k].salidas || []).forEach(function(x) {
@@ -610,7 +618,7 @@ window.__cbSeed = function() {
 (function() {
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const COLS = ["tipos", "envases", "clientes", "tandas", "lotes", "fermentadores", "cervezas", "perdidas", "incidentes", "pagos", "insumos", "proveedores", "compras", "movins", "recetas", "pagosprov", "ventascel", "gastos"];
+  const COLS = ["tipos", "envases", "clientes", "tandas", "lotes", "fermentadores", "cervezas", "perdidas", "incidentes", "pagos", "insumos", "proveedores", "compras", "movins", "recetas", "pagosprov", "ventascel", "gastos", "cargos"];
   const S = {
     tipos: [],
     envases: [],
@@ -630,6 +638,7 @@ window.__cbSeed = function() {
     pagosprov: [],
     ventascel: [],
     gastos: [],
+    cargos: [],
     config: { alertaDias: 30 },
     got: /* @__PURE__ */ new Set(),
     dbOk: null,
@@ -1169,7 +1178,7 @@ window.__cbSeed = function() {
       }).join(" · ")}</div>` : ""}
       ${inc.length ? `<div><h3 class="lbl">Incidentes y reclamos</h3><div class="hist">${inc.slice(0, 8).map((x) => `<div style="--c:var(--warn)"><strong>${esc(ORIG[x.origen] || "")}</strong> · ${esc(x.motivo || "")} · <span class="mono">${esc(x.codigo || "")}</span>${x.excedido ? ` · excedido ${x.excedido} días` : ""}${x.detalle ? `<div class="small">${esc(x.detalle)}</div>` : ""}<div class="muted small">${fmtF(x.fecha)} · ${x.detectadoPor === "cliente" ? "reclamo del cliente" : "detectado en fábrica"}</div></div>`).join("")}</div></div>` : ""}
       ${cta.mov.length ? `<div><div class="row between"><h3 class="lbl" style="margin:0">Cuenta</h3><span class="small num">${cta.saldo > 0.5 ? `<strong style="color:var(--warn)">Debe ${fmt$(cta.saldo)}</strong> desde ${fmtF(cta.desde)}${cta.vencidaDias ? ` · <strong style="color:var(--warn)">vencida hace ${cta.vencidaDias} días</strong>` : cta.plazoPago ? ` · vence el ${fmtF(cta.vence)}` : ""}` : cta.saldo < -0.5 ? `<strong>A favor ${fmt$(-cta.saldo)}</strong>` : '<strong style="color:var(--ok)">Al día</strong>'}</span></div>
-        <div class="panel tbl" style="margin-top:6px"><table><tbody>${[...cta.mov].reverse().slice(0, 10).map((m) => `<tr><td class="num" style="white-space:nowrap">${fmtF(m.fecha)}</td><td class="small">${m.tipo === "cargo" ? "Compra: " : m.credito ? "Crédito: " : "Pago: "}${esc(m.txt)}</td><td class="r num" style="white-space:nowrap;${m.tipo === "pago" ? "color:var(--ok)" : ""}">${m.tipo === "pago" ? "−" : ""}${fmt$(m.monto)}</td><td class="r">${m.tipo === "pago" && !m.credito && S.canWrite ? `<button type="button" class="lnk" data-act="anular-pago" data-id="${m.id}">anular</button>` : ""}</td></tr>`).join("")}</tbody></table></div></div>` : ""}
+        <div class="panel tbl" style="margin-top:6px"><table><tbody>${[...cta.mov].reverse().slice(0, 10).map((m) => `<tr><td class="num" style="white-space:nowrap">${fmtF(m.fecha)}</td><td class="small">${m.tipo === "cargo" ? "Compra: " : m.credito ? "Crédito: " : "Pago: "}${esc(m.txt)}</td><td class="r num" style="white-space:nowrap;${m.tipo === "pago" ? "color:var(--ok)" : ""}">${m.tipo === "pago" ? m.monto < 0 ? "+" : "−" : ""}${fmt$(Math.abs(m.monto))}</td><td class="r">${m.tipo === "pago" && !m.credito && S.canWrite ? `<button type="button" class="lnk" data-act="anular-pago" data-id="${m.id}">anular</button>` : ""}${m.cargoId && S.canWrite ? `<button type="button" class="lnk" data-act="anular-cargo" data-id="${m.cargoId}">anular</button>` : ""}</td></tr>`).join("")}</tbody></table></div></div>` : ""}
       ${S.canWrite ? `<div class="row"><button class="btn sm" data-act="editar-cliente" data-id="${c.id}">Editar cliente</button><button class="btn sm" data-act="registrar-pago" data-id="${c.id}">Registrar pago</button>${lat.length ? `<button class="btn sm" data-act="devolucion-latas" data-id="${c.id}">Devolución de latas</button>` : ""}<button class="btn sm" data-act="reclamo-cli" data-id="${c.id}" style="color:var(--warn)">Registrar reclamo</button></div>` : ""}
     </div></details>`;
     }).join("") + `</div>`;
@@ -1682,6 +1691,12 @@ const CATEMO = { Malta: "🌾", "Lúpulo": "🌿", Levadura: "🧫", Adjunto: "�
         if (cu > 0) costo += cu * Number(x.cantidad); else sinCosto++;
       });
     });
+    let barr = 0;
+    S.cargos.forEach((c) => {
+      if (c.anulado || mesDe(c.fecha) !== m || !(Number(c.ingreso) > 0)) return;
+      ventas += Number(c.ingreso);
+      if (c.tipo === "barril") { barr++; if (Number(c.costo) > 0) costo += Number(c.costo); else sinCosto++; }
+    });
     const G = S.gastos.filter((g) => !g.anulado && mesDe(g.fecha) === m);
     const gastos = G.reduce((s, g) => s + (Number(g.monto) || 0), 0);
     const porCat = {};
@@ -1690,7 +1705,7 @@ const CATEMO = { Malta: "🌾", "Lúpulo": "🌿", Levadura: "🧫", Adjunto: "�
     const compras = S.compras.filter((c) => !c.anulada && c.pago !== "pendiente" && mesDe(c.fecha) === m).reduce((s, c) => s + (Number(c.total) || 0), 0);
     const pagProv = S.pagosprov.filter((p) => !p.anulado && mesDe(p.fecha) === m).reduce((s, p) => s + (Number(p.monto) || 0), 0);
     const vendido = ventas - notas, resV = vendido - costo - gastos, caja = cobros - compras - pagProv - gastos;
-    return { m, ventas, notas, vendido, costo, sinCosto, unid, gastos, porCat, G, cobros, compras, pagProv, resV, caja };
+    return { m, ventas, notas, vendido, costo, sinCosto, unid, barr, gastos, porCat, G, cobros, compras, pagProv, resV, caja };
   }
   const signo$ = (v) => `<span style="color:${v < -0.5 ? "var(--warn)" : "var(--ok)"}">${v < -0.5 ? "− " + fmt$(-v) : fmt$(v)}</span>`;
   function vResultado(D) {
@@ -1702,7 +1717,7 @@ const CATEMO = { Malta: "🌾", "Lúpulo": "🌿", Levadura: "🧫", Adjunto: "�
   <p class="muted small" style="margin:6px 0 12px">Dos miradas del mismo mes. <strong>Por lo vendido</strong>: si el negocio gana plata, aunque te paguen después. <strong>Por la caja</strong>: cuánta plata entró y salió de verdad.</p>
   <div class="grid2" style="align-items:start">
   <div class="panel tbl"><table><thead><tr><th>Por lo vendido</th><th class="r">${esc(mesTxt(R.m))}</th></tr></thead><tbody>
-    ${fila("Ventas", R.ventas, R.unid ? fmtN(R.unid) + " unidades" : "")}${R.notas ? fila("Devoluciones con crédito", R.notas, "", true) : ""}
+    ${fila("Ventas", R.ventas, [R.unid && fmtN(R.unid) + " latas u otros", R.barr && R.barr + " entrega" + (R.barr > 1 ? "s" : "") + " de barriles"].filter(Boolean).join(" · "))}${R.notas ? fila("Devoluciones con crédito", R.notas, "", true) : ""}
     ${fila("Costo de lo vendido", R.costo, "cerveza + envase de cada unidad" + (R.sinCosto ? ` · <span style="color:var(--soon)">${R.sinCosto} venta${R.sinCosto > 1 ? "s" : ""} sin costo cargado</span>` : ""), true)}
     ${fila("Gastos generales", R.gastos, "", true)}
     <tr><td><strong>Resultado</strong></td><td class="r num"><strong>${signo$(R.resV)}</strong></td></tr></tbody></table></div>
@@ -1756,6 +1771,95 @@ const CATEMO = { Malta: "🌾", "Lúpulo": "🌿", Levadura: "🧫", Adjunto: "�
           await db.doc("gastos/" + id).update({ anulado: true, anuladoMotivo: m, anuladoEn: new Date().toISOString(), anuladoPor: S.uid });
           closeSheet();
           toast("Gasto anulado");
+        });
+      });
+    });
+  }
+  function cobroBarrilHTML(L, D) {
+    const cfg = S.config.precioBarril || {}, lt = L.reduce((s, e) => s + litros(D.T[e.tipoId], e.medida), 0);
+    return `<details class="panel" id="ac-cobro" style="padding:10px" ${cfg.modo && cfg.modo !== "no" ? "open" : ""}><summary style="cursor:pointer;font-weight:600">💲 Cobro de ${L.length > 1 ? "estos barriles" : "este barril"} (opcional)</summary><div class="stack" style="margin-top:10px">
+      <div class="grid2"><label class="f" for="ac-cm">Cómo cobrás la cerveza<select id="ac-cm"><option value="no">No cobrar ahora</option><option value="barril" ${cfg.modo === "barril" ? "selected" : ""}>Por barril cerrado</option><option value="litro" ${cfg.modo === "litro" ? "selected" : ""}>Por litro</option></select></label>
+      <label class="f" for="ac-pv" id="ac-pvw">Precio<input id="ac-pv" type="number" min="0" step="any" inputmode="decimal" value="${cfg.valor || ""}"><span class="h" id="ac-pvh"></span></label></div>
+      <div class="grid2"><label class="f" for="ac-al">Alquiler por barril ($, opcional)<input id="ac-al" type="number" min="0" step="any" inputmode="decimal" value="${cfg.alquiler || ""}"><span class="h">Se cobra y no se devuelve.</span></label>
+      <label class="f" for="ac-dep">Depósito por barril ($, opcional)<input id="ac-dep" type="number" min="0" step="any" inputmode="decimal" value="${cfg.deposito || ""}"><span class="h">Se devuelve cuando vuelve el barril.</span></label></div>
+      <div class="note row between"><span id="ac-ctxt">Total</span><strong class="num" id="ac-ctot">—</strong></div>
+      <div class="grid2"><label class="f" for="ac-pg">Pago<select id="ac-pg"><option value="pendiente">Queda debiendo</option><option value="pagado">Pagó ahora</option></select></label><label class="f" for="ac-me" id="ac-mew" hidden>Medio<select id="ac-me">${MEDIOS.map((m) => `<option>${m}</option>`).join("")}</select></label></div>
+      <input type="hidden" id="ac-lt2" value="${lt}"><input type="hidden" id="ac-nb" value="${L.length}"></div></details>`;
+  }
+  function cobroBarrilCalc() {
+    const modo = val("ac-cm"), pv = +val("ac-pv") || 0, n = +val("ac-nb") || 0, lt = +val("ac-lt2") || 0, al = +val("ac-al") || 0, dep = +val("ac-dep") || 0;
+    const cerveza = modo === "barril" ? pv * n : modo === "litro" ? pv * lt : 0;
+    return { modo, pv, n, lt, al, dep, cerveza, alquiler: al * n, deposito: dep * n, total: cerveza + al * n + dep * n };
+  }
+  function bindCobroBarril() {
+    if (!$("#ac-cobro")) return;
+    const upd = () => {
+      const c = cobroBarrilCalc();
+      $("#ac-pvw").hidden = c.modo === "no";
+      $("#ac-pvh").textContent = c.modo === "litro" ? `por litro · ${fmtN(c.lt)} L` : c.modo === "barril" ? `por barril · ${c.n} barril${c.n > 1 ? "es" : ""}` : "";
+      $("#ac-ctot").textContent = c.total > 0 ? fmt$(c.total) : "—";
+      $("#ac-ctxt").textContent = c.total > 0 ? [c.cerveza && "cerveza " + fmt$(c.cerveza), c.alquiler && "alquiler " + fmt$(c.alquiler), c.deposito && "depósito " + fmt$(c.deposito)].filter(Boolean).join(" + ") : "Total";
+      $("#ac-mew").hidden = val("ac-pg") !== "pagado" || !(c.total > 0);
+    };
+    $("#ac-cobro").addEventListener("input", upd);
+    $("#ac-cobro").addEventListener("change", upd);
+    upd();
+  }
+  function cobroSnap() {
+    return $("#ac-cobro") ? { c: cobroBarrilCalc(), pg: val("ac-pg"), me: val("ac-me") } : null;
+  }
+  async function cobrarBarriles(L, clienteId, fecha, sn) {
+    if (!sn) return;
+    const c = sn.c;
+    if (!(c.total > 0) || !clienteId) return;
+    const D = derive(), now = new Date().toISOString(), ids = L.map((e) => e.id);
+    const est = [...new Set(L.map((e) => D.K[e.tandaId] && D.K[e.tandaId].estilo).filter(Boolean))].join(", ");
+    const cods = L.map((e) => e.codigo).join(", ");
+    const base = { t: now, fecha, clienteId, envaseIds: ids, por: S.uid };
+    if (c.cerveza > 0) {
+      const costo = L.reduce((s, e) => { const k = D.K[e.tandaId]; return s + litros(D.T[e.tipoId], e.medida) * (k ? Number(costoLitroTanda(k)) || 0 : 0); }, 0);
+      await db.collection("cargos").add(Object.assign({}, base, { tipo: "barril", concepto: `${L.length} barril${L.length > 1 ? "es" : ""}${est ? " de " + est : ""} (${cods}) · ${c.modo === "litro" ? fmtN(c.lt) + " L a " + fmt$(c.pv) : fmt$(c.pv) + " c/u"}`, monto: Math.round(c.cerveza * 100) / 100, ingreso: Math.round(c.cerveza * 100) / 100, litros: c.lt, modo: c.modo, costo: Math.round(costo * 100) / 100 }));
+    }
+    if (c.alquiler > 0) await db.collection("cargos").add(Object.assign({}, base, { tipo: "alquiler", concepto: `Alquiler de ${L.length} barril${L.length > 1 ? "es" : ""} (${cods})`, monto: c.alquiler, ingreso: c.alquiler }));
+    if (c.deposito > 0) {
+      await db.collection("cargos").add(Object.assign({}, base, { tipo: "deposito", concepto: `Depósito de ${L.length} barril${L.length > 1 ? "es" : ""} (${cods})`, monto: c.deposito, ingreso: 0 }));
+      for (const e of L) await db.doc("envases/" + e.id).update({ deposito: { monto: c.dep, clienteId } });
+    }
+    if (sn.pg === "pagado") await db.collection("pagos").add({ t: now, fecha, clienteId, monto: Math.round(c.total * 100) / 100, medio: sn.me, nota: "Barriles " + cods, por: S.uid });
+    await db.doc("config/general").set(Object.assign({}, S.config, { precioBarril: { modo: c.modo, valor: c.pv || null, alquiler: c.al || null, deposito: c.dep || null } }));
+  }
+  function depositoRecibirHTML(L) {
+    const C = L.filter((e) => e.deposito && e.deposito.monto > 0);
+    if (!C.length) return "";
+    const tot = C.reduce((s, e) => s + Number(e.deposito.monto), 0);
+    return `<div class="panel" style="padding:10px"><div class="small" style="margin-bottom:6px"><strong>Depósito: ${fmt$(tot)}</strong> (${C.map((e) => e.codigo).join(", ")})</div><label class="f" for="ac-dv">¿Qué hacés con el depósito?<select id="ac-dv"><option value="plata">Se lo devuelvo en plata</option><option value="favor">Queda a favor del cliente</option><option value="retener">Me lo quedo (barril dañado o perdido)</option></select></label><label class="f" for="ac-dvm" id="ac-dvmw">Medio<select id="ac-dvm">${MEDIOS.map((m) => `<option>${m}</option>`).join("")}</select></label></div>`;
+  }
+  async function depositoRecibir(L, fecha, sn) {
+    if (!sn) return;
+    const C = L.filter((e) => e.deposito && e.deposito.monto > 0), modo = sn.modo, now = new Date().toISOString();
+    const G = {};
+    C.forEach((e) => { const k = e.deposito.clienteId || e.clienteId; (G[k] = G[k] || []).push(e); });
+    for (const cid of Object.keys(G)) {
+      const E = G[cid], m = E.reduce((s, e) => s + Number(e.deposito.monto), 0), cods = E.map((e) => e.codigo).join(", ");
+      if (modo === "retener") await db.collection("cargos").add({ t: now, fecha, clienteId: cid, envaseIds: E.map((e) => e.id), tipo: "retencion", concepto: `Depósito retenido (${cods})`, monto: 0, ingreso: m, por: S.uid });
+      else {
+        await db.collection("cargos").add({ t: now, fecha, clienteId: cid, envaseIds: E.map((e) => e.id), tipo: "devdeposito", concepto: `Devolución de depósito (${cods})`, monto: -m, ingreso: 0, por: S.uid });
+        if (modo === "plata") await db.collection("pagos").add({ t: now, fecha, clienteId: cid, monto: -m, medio: sn.medio, nota: "Devolución de depósito " + cods, por: S.uid });
+      }
+    }
+    for (const e of C) await db.doc("envases/" + e.id).update({ deposito: null });
+  }
+  function sheetAnularCargo(id) {
+    const c = S.cargos.find((z) => z.id === id);
+    if (!c || c.anulado) return;
+    openSheet("Anular cargo", `<form class="stack" id="f"><div>${fmtF(c.fecha)} · ${esc(c.concepto)} · <strong>${fmt$(c.monto)}</strong></div><div class="note">Queda registrado como anulado, con el motivo. Se recalcula la cuenta del cliente. Si el cliente ya pagó, ese pago queda a su favor.</div><label class="f" for="acg-m">Motivo (obligatorio)<input id="acg-m" required></label><button class="btn pri" type="submit">Anular cargo</button></form>`, () => {
+      submitOnce($("#f"), () => {
+        const m = val("acg-m");
+        if (!m) { toast("Escribí el motivo."); return false; }
+        return W(async () => {
+          await db.doc("cargos/" + id).update({ anulado: true, anuladoMotivo: m, anuladoEn: new Date().toISOString(), anuladoPor: S.uid });
+          closeSheet();
+          toast("Cargo anulado");
         });
       });
     });
@@ -2759,9 +2863,9 @@ function nuevoInsumoInline(row,selCls,after){
       body = (sin ? `<div class="note bad">${sin === L.length ? L.length > 1 ? "Estos barriles no tienen" : "Este barril no tiene" : sin + " de estos barriles no tienen"} cerveza asignada. Conviene asignarla antes de enviar.</div>` : "") + `<label class="f" for="ac-cli">Cliente<select id="ac-cli"><option value="">Elegí un cliente…</option>${opts(byName(S.clientes))}</select></label>
     <label class="f" for="ac-nuevo">O cliente nuevo<input id="ac-nuevo" placeholder="Nombre del bar o local"></label>
     <label class="f" for="ac-f">Fecha de salida<input id="ac-f" type="date" value="${hoy()}" max="${hoy()}" required></label>
-    <label class="f" for="ac-obs">Observaciones<input id="ac-obs" placeholder="Opcional"></label>`;
+    <label class="f" for="ac-obs">Observaciones<input id="ac-obs" placeholder="Opcional"></label>` + cobroBarrilHTML(L, D);
     } else if (k === "recibir") {
-      body = `<label class="f" for="ac-f">Fecha de retorno<input id="ac-f" type="date" value="${hoy()}" max="${hoy()}" required></label><p class="small muted" style="margin:0">Queda como “Para lavar”.</p><label class="row" style="gap:8px;font-weight:600;font-size:13.5px"><input type="checkbox" id="ac-prob" class="ck"> Volvió con problema o reclamo</label>`;
+      body = `<label class="f" for="ac-f">Fecha de retorno<input id="ac-f" type="date" value="${hoy()}" max="${hoy()}" required></label><p class="small muted" style="margin:0">Queda como “Para lavar”.</p><label class="row" style="gap:8px;font-weight:600;font-size:13.5px"><input type="checkbox" id="ac-prob" class="ck"> Volvió con problema o reclamo</label>` + depositoRecibirHTML(L);
     }
     const T = { llenar: "Llenar", enviar: "Enviar a cliente", recibir: "Recibir", asignar: "Asignar cerveza" }[k];
     openSheet(T, `<form class="stack" id="f"><div class="muted">${esc(lista)}</div>${body}<button class="btn pri" type="submit">${T}</button></form>`, () => {
@@ -2787,12 +2891,23 @@ function nuevoInsumoInline(row,selCls,after){
         };
         bindPicker("ac", info);
       }
+      if (k === "enviar") bindCobroBarril();
+      if (k === "recibir" && $("#ac-dv")) {
+        const tg = () => { $("#ac-dvmw").hidden = val("ac-dv") !== "plata"; };
+        $("#ac-dv").addEventListener("change", tg);
+        tg();
+      }
       submitOnce($("#f"), async () => {
         var _a;
         const x = {};
         if (k === "llenar" || k === "asignar") {
           x.tandaId = await resolverCerveza("ac");
           if (!x.tandaId) return false;
+        }
+        const snC = k === "enviar" ? cobroSnap() : null, snD = k === "recibir" && $("#ac-dv") ? { modo: val("ac-dv"), medio: val("ac-dvm") } : null;
+        if (snC && snC.c.modo !== "no" && !(snC.c.pv > 0)) {
+          toast("Poné el precio, o elegí “No cobrar ahora”.");
+          return false;
         }
         if (k === "enviar") {
           x.clienteId = val("ac-cli");
@@ -2813,6 +2928,8 @@ function nuevoInsumoInline(row,selCls,after){
         if (k === "enviar" || k === "recibir") x.fecha = val("ac-f") || hoy();
         const conProb = k === "recibir" && !!((_a = document.getElementById("ac-prob")) == null ? void 0 : _a.checked);
         const r = await accion(ids, k, x);
+        if (r && snC) await W(() => cobrarBarriles(L, x.clienteId, x.fecha, snC));
+        if (r && snD) await W(() => depositoRecibir(L, x.fecha, snD));
         if (r && conProb) setTimeout(() => sheetProblema(ids[0], { ids, recibido: true }), 700);
         return r;
       });
@@ -3959,6 +4076,11 @@ function nuevoInsumoInline(row,selCls,after){
       if (x.devolucion) return;
       if (x.clienteId === cid && !x.anulada && !x.descarte && Number(x.total) > 0) mov.push({ t: x.t, fecha: x.fecha, tipo: "cargo", monto: Number(x.total), txt: `${fmtN(x.cantidad)} latas ${l.tandaId && ((_a = S.tandas.find((z) => z.id === l.tandaId)) == null ? void 0 : _a.estilo) || ""}`, lote: l.id, i });
     }));
+    S.cargos.forEach((c) => {
+      if (c.clienteId !== cid || c.anulado || !Number(c.monto)) return;
+      if (c.monto > 0) mov.push({ t: c.t, fecha: c.fecha, tipo: "cargo", monto: Number(c.monto), txt: c.concepto, cargoId: c.id });
+      else mov.push({ t: c.t, fecha: c.fecha, tipo: "pago", credito: true, monto: -Number(c.monto), txt: c.concepto });
+    });
     S.pagos.forEach((p) => {
       if (p.clienteId === cid && !p.anulado) mov.push({ t: p.t, fecha: p.fecha, tipo: "pago", monto: Number(p.monto) || 0, txt: p.medio + (p.nota ? " · " + p.nota : ""), id: p.id });
     });
@@ -4816,6 +4938,9 @@ function nuevoInsumoInline(row,selCls,after){
       case "anular-pago":
         sheetAnularPago(id);
         break;
+      case "anular-cargo":
+        sheetAnularCargo(id);
+        break;
       case "nuevo-gasto":
         sheetGasto();
         break;
@@ -5196,6 +5321,7 @@ function nuevoInsumoInline(row,selCls,after){
 /* Novedades para testers */
 (function(){
 var NOV=[
+ {id:'2026-11-20b',f:'20 nov',t:['Barriles con precio: al enviar barriles a un cliente podés cobrarlos por barril cerrado o por litro, sumar alquiler y/o depósito, y marcar si pagó o queda debiendo.','El cobro va a la cuenta del cliente y a las ventas del mes en 💵 Resultado, con su costo.','Al recibir un barril con depósito elegís: devolverlo en plata, dejarlo a favor del cliente o quedártelo si el barril volvió dañado.']},
  {id:'2026-11-20',f:'20 nov',t:['Nueva pestaña 💵 Resultado: cargás los gastos generales (luz, alquiler, gas, sueldos…) y ves cuánto ganaste en el mes.','Muestra el mes de dos formas: por lo vendido (si el negocio gana plata, aunque te paguen después) y por la caja (cuánta plata entró y salió de verdad).','Abajo, los últimos meses para comparar. Se puede ocultar en Ajustes → Qué usás.']},
  {id:'2026-11-19b',f:'19 nov',t:['Nueva pestaña 📱 Venta rápida: cargás una venta en segundos (qué, cuánto, a quién, si pagó).','Sirve para vender desde el celular aunque los datos estén en la compu: el celular junta las ventas y las mandás por WhatsApp; la compu las recibe y las descuenta del stock solas, sin duplicar.','Desde la compu podés mandar al celular la lista de cervezas, precios y clientes. Para probarlo en el demo: en Venta rápida cambiá “Este aparato es…”.','En Ajustes → Qué usás se puede ocultar la Venta rápida y también las Cuentas a pagar. Antes de ocultar, la app avisa si queda algo pendiente.']},
  {id:'2026-11-19',f:'19 nov',t:['Al envasar latas, la app descuenta del stock de insumos lo que usás por cada una (lata vacía, tapa, etiqueta). La primera vez lo elegís y después lo recuerda.','Cada envasado muestra su costo por unidad: la cerveza más el envase.','Al registrar una venta ves cuánto te queda por lata después del costo.']},
